@@ -12,6 +12,7 @@ export default defineConfig({
     },
   },
   plugins: [vue()],
+  base: "https://melkisedeth.github.io/landingRenuevatuvivienda/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
