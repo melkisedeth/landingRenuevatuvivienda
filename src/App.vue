@@ -11,10 +11,12 @@ import Contact from "./components/Contact.vue";
 import FAQ from "./components/FAQ.vue";
 import Footer from "./components/Footer.vue";
 import Cursos from "./components/Cursos.vue";
+import Sorteo from "./components/RaffleSection.vue";
 </script>
 
 <template>
   <Navbar />
+  <Sorteo />
   <Home />
   <Sponsors />
   <Benefits />

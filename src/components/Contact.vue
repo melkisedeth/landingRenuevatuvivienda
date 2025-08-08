@@ -102,7 +102,7 @@ const handleSubmit = () => {
 
       <!-- Formulario -->
       <Card class="bg-muted/60 dark:bg-card">
-        <CardHeader class="text-primary text-2xl font-semibold">Escribinos</CardHeader>
+        <CardHeader class="text-primary text-2xl font-semibold">Escribenos</CardHeader>
         <CardContent>
           <form @submit.prevent="handleSubmit" class="grid gap-4">
             <div class="flex flex-col md:flex-row gap-8">
