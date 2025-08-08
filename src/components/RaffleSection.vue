@@ -32,21 +32,21 @@ const loadTakenNumbers = async () => {
   }
 };
 
-// Enviar formulario
 const saveParticipation = async () => {
   isLoading.value = true;
   
   try {
+    const params = new URLSearchParams();
+    params.append('name', form.value.name);
+    params.append('phone', form.value.phone);
+    params.append('selectedNumber', String(form.value.selectedNumber));
+    
     const response = await fetch(webAppUrl.value, {
       method: 'POST',
+      body: params,
       headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: form.value.name,
-        phone: form.value.phone,
-        selectedNumber: form.value.selectedNumber
-      })
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
     });
     
     const result = await response.json();
@@ -58,6 +58,7 @@ const saveParticipation = async () => {
     } else {
       throw new Error(result.message || "Error desconocido");
     }
+    
   } catch (error: any) {
     alert(error.message || "Error de conexión. Intenta nuevamente.");
     console.error("Error:", error);

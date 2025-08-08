@@ -41,7 +41,6 @@ const stopAutoplay = () => {
 
 onMounted(() => {
   setTimeout(() => {
-    console.log('Carousel Ref:', carouselRef.value);
     startAutoplay();
   }, 2500);
 }); 
