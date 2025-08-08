@@ -70,7 +70,7 @@ const handleSubmit = () => {
               <Building2 />
               <span class="font-bold">Ubicación</span>
             </div>
-            <p>Las Jaguas de Ibirico, Cesar, Colombia</p>
+            <p>La Jagua de ibirico, Cesar - Colombia</p>
           </div>
 
           <div>
@@ -78,7 +78,7 @@ const handleSubmit = () => {
               <Phone />
               <span class="font-bold">Teléfono</span>
             </div>
-            <p>+57 312 345 6789</p>
+            <p>+57 321 697 8975</p>
           </div>
 
           <div>
@@ -86,7 +86,8 @@ const handleSubmit = () => {
               <Mail />
               <span class="font-bold">Email</span>
             </div>
-            <p>example@gmail.com</p>
+            <p>Joseagomar2009@hotmail.com</p>
+            <p>enyerelpoeta@gmail.com</p>
           </div>
 
           <div>
@@ -94,7 +95,7 @@ const handleSubmit = () => {
               <Clock />
               <span class="font-bold">Horario</span>
             </div>
-            <p>Lunes a Viernes · 8:00 a 16:00 hs</p>
+            <p>Siempre disponible (24/7)</p>
           </div>
         </div>
       </div>
