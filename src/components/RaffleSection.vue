@@ -1,75 +1,179 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db, signInWithEmailAndPassword } from '@/lib/firebase';
 
 // Estado del formulario
 const form = ref({
   name: '',
   phone: '',
-  selectedNumber: null as number | null
+  selectedNumbers: [] as number[]
 });
 
 // Configuración
-const availableNumbers = ref(Array.from({length: 100}, (_, i) => i + 1));
+const availableNumbers = ref(Array.from({length: 1000}, (_, i) => i + 1));
 const takenNumbers = ref<number[]>([]);
 const isLoading = ref(false);
-const webAppUrl = ref('https://script.google.com/macros/s/AKfycbzIOqMYhHQ6jC6BHbtjfZXfiPm3uPa2mRKj2xRQFRusCxYkrqW7ZaNj48MnYyPUJwggww/exec');
+const ticketPrice = 10000; // 10,000 COP por número
+const showAdminPanel = ref(true); // Cambiar a true para mostrar el panel de admin
+
+// Variables para el panel de administrador
+const adminNumbersInput = ref('');
+const isAdminAuthenticated = ref(false);
+const adminCredentials = ref({
+  email: '',
+  password: ''
+});
+
+// Datos de contacto del administrador
+const adminData = ref({
+  phone: '3125919606',
+  messageTemplate: 'Hola, quiero participar en la rifa con los siguientes datos:'
+});
+
+// Precio total calculado
+const totalPrice = computed(() => {
+  return form.value.selectedNumbers.length * ticketPrice;
+});
 
 // Validaciones
 const isValidPhone = (phone: string) => /^[0-9]{10,15}$/.test(phone);
 
-// Cargar números ocupados
+// Cargar números ocupados desde Firebase
 const loadTakenNumbers = async () => {
   try {
-    const response = await fetch(`${webAppUrl.value}?action=getNumbers`);
-    if (!response.ok) throw new Error('Error al cargar números');
-    const data = await response.json();
-    takenNumbers.value = data.takenNumbers || [];
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Error al cargar números ocupados. Recarga la página.");
-  }
-};
-
-const saveParticipation = async () => {
-  isLoading.value = true;
-  
-  try {
-    const params = new URLSearchParams();
-    params.append('name', form.value.name);
-    params.append('phone', form.value.phone);
-    params.append('selectedNumber', String(form.value.selectedNumber));
+    isLoading.value = true;
+    const docRef = doc(db, "raffle", "takenNumbers");
+    const docSnap = await getDoc(docRef);
     
-    const response = await fetch(webAppUrl.value, {
-      method: 'POST',
-      body: params,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      alert(`¡Registro exitoso! Tu número: ${result.number}`);
-      takenNumbers.value.push(form.value.selectedNumber as number);
-      form.value = { name: '', phone: '', selectedNumber: null };
-    } else {
-      throw new Error(result.message || "Error desconocido");
+    if (docSnap.exists()) {
+      takenNumbers.value = docSnap.data().numbers || [];
     }
-    
-  } catch (error: any) {
-    alert(error.message || "Error de conexión. Intenta nuevamente.");
-    console.error("Error:", error);
+  } catch (error) {
+    console.error("Error cargando números ocupados:", error);
+    // Fallback a localStorage si Firebase falla
+    const savedNumbers = localStorage.getItem('takenNumbers');
+    if (savedNumbers) {
+      takenNumbers.value = JSON.parse(savedNumbers);
+    }
   } finally {
     isLoading.value = false;
   }
 };
 
-// Validar y enviar
+// Guardar números ocupados en Firebase
+const saveTakenNumbers = async () => {
+  try {
+    isLoading.value = true;
+    const docRef = doc(db, "raffle", "takenNumbers");
+    await setDoc(docRef, {
+      numbers: takenNumbers.value,
+      lastUpdated: new Date().toISOString()
+    });
+    // También guardar en localStorage como backup
+    localStorage.setItem('takenNumbers', JSON.stringify(takenNumbers.value));
+  } catch (error) {
+    console.error("Error guardando números ocupados:", error);
+    // Fallback a localStorage si Firebase falla
+    localStorage.setItem('takenNumbers', JSON.stringify(takenNumbers.value));
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Autenticación de administrador
+const loginAdmin = async () => {
+  try {
+    await signInWithEmailAndPassword(
+      auth, 
+      adminCredentials.value.email, 
+      adminCredentials.value.password
+    );
+    isAdminAuthenticated.value = true;
+    alert("Autenticación exitosa");
+  } catch (error) {
+    console.error("Error de autenticación:", error);
+    alert("Credenciales incorrectas");
+  }
+};
+
+// Toggle para selección de números
+const toggleNumberSelection = (number: number) => {
+  const index = form.value.selectedNumbers.indexOf(number);
+  
+  if (index === -1) {
+    if (!takenNumbers.value.includes(number)) {
+      form.value.selectedNumbers.push(number);
+    }
+  } else {
+    form.value.selectedNumbers.splice(index, 1);
+  }
+};
+
+// Generar enlace de WhatsApp con los datos del formulario
+const generateWhatsAppLink = () => {
+  if (form.value.selectedNumbers.length === 0) return '';
+  
+  const numbersList = form.value.selectedNumbers.join(', ');
+  
+  const message = `${adminData.value.messageTemplate}
+  
+Nombre: ${form.value.name}
+Teléfono: ${form.value.phone}
+Números seleccionados: ${numbersList}
+Total a pagar: $${totalPrice.value.toLocaleString('es-CO')} COP
+
+Por favor enviaré el comprobante de pago en seguida.`;
+
+  return `https://wa.me/${adminData.value.phone}?text=${encodeURIComponent(message)}`;
+};
+
+// Marcar números como ocupados
+const markNumbersAsTaken = async (numbers: number[]) => {
+  const newNumbers = [...new Set([...takenNumbers.value, ...numbers])];
+  takenNumbers.value = newNumbers;
+  await saveTakenNumbers();
+};
+
+// Función para que el admin marque números como ocupados
+const markAdminNumbers = async () => {
+  if (!isAdminAuthenticated.value) {
+    alert("Debes autenticarte como administrador primero");
+    return;
+  }
+
+  const numbersToMark = adminNumbersInput.value
+    .split(',')
+    .map(num => parseInt(num.trim()))
+    .filter(num => !isNaN(num) && num >= 1 && num <= 1000);
+  
+  if (numbersToMark.length > 0) {
+    await markNumbersAsTaken(numbersToMark);
+    adminNumbersInput.value = '';
+    alert(`Números marcados como ocupados: ${numbersToMark.join(', ')}`);
+  } else {
+    alert('Ingresa números válidos separados por comas (ej: 5, 12, 34)');
+  }
+};
+
+// Limpiar todos los números ocupados
+const clearAllTakenNumbers = async () => {
+  if (!isAdminAuthenticated.value) {
+    alert("Debes autenticarte como administrador primero");
+    return;
+  }
+
+  if (confirm("¿Estás seguro de que quieres limpiar TODOS los números ocupados?")) {
+    takenNumbers.value = [];
+    await saveTakenNumbers();
+    alert("Todos los números han sido liberados");
+  }
+};
+
+// Validar y redirigir a WhatsApp
 const handleSubmit = () => {
-  // Validaciones básicas
   if (!form.value.name.trim()) {
     alert("Por favor ingresa tu nombre");
     return;
@@ -80,17 +184,27 @@ const handleSubmit = () => {
     return;
   }
 
-  if (!form.value.selectedNumber) {
-    alert("Selecciona un número para participar");
+  if (form.value.selectedNumbers.length === 0) {
+    alert("Selecciona al menos un número para participar");
     return;
   }
 
-  if (takenNumbers.value.includes(form.value.selectedNumber)) {
-    alert("Este número ya está ocupado. Elige otro.");
+  const alreadyTaken = form.value.selectedNumbers.filter(num => takenNumbers.value.includes(num));
+  if (alreadyTaken.length > 0) {
+    alert(`Los siguientes números ya están ocupados: ${alreadyTaken.join(', ')}`);
     return;
   }
 
-  saveParticipation();
+  window.open(generateWhatsAppLink(), '_blank');
+  
+  alert(`¡Perfecto! Se abrirá WhatsApp para que envíes tus datos. 
+  
+IMPORTANTE:
+1. Envía el mensaje que se generó automáticamente
+2. Luego envía una foto del comprobante de transferencia
+3. Tus números serán reservados una vez validemos el pago
+
+Total a pagar: $${totalPrice.value.toLocaleString('es-CO')} COP`);
 };
 
 // Cargar números al iniciar
@@ -112,11 +226,22 @@ onMounted(() => {
         </div>
 
         <p class="max-w-screen-sm mx-auto text-xl text-muted-foreground">
-          Elige tu número de la suerte y participa para ganar increíbles premios. ¡El sorteo será el 15 de diciembre!
+          Elige tus números de la suerte y participa para ganar increíbles premios. ¡Cada número cuesta $10,000 COP!
         </p>
+        
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4 text-left max-w-screen-sm mx-auto">
+          <p class="font-bold text-yellow-700">Instrucciones para participar:</p>
+          <ol class="list-decimal list-inside text-yellow-700 space-y-1 mt-2">
+            <li>Selecciona uno o más números (cada uno vale $10,000 COP)</li>
+            <li>Completa tus datos personales</li>
+            <li>Te redirigiremos a WhatsApp para confirmar</li>
+            <li>Envía el comprobante de transferencia por el total</li>
+            <li>Validaremos tu pago y reservaremos tus números</li>
+          </ol>
+        </div>
       </div>
 
-      <div class="w-full max-w-2xl bg-white/90 dark:bg-card p-6 md:p-8 rounded-lg shadow-lg">
+      <div class="w-full max-w-6xl bg-white/90 dark:bg-card p-6 md:p-8 rounded-lg shadow-lg">
         <div class="space-y-6">
           <div class="space-y-2">
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre completo</label>
@@ -140,44 +265,104 @@ onMounted(() => {
           </div>
 
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-center">Elige tu número de la suerte (1-100)</h3>
+            <h3 class="text-lg font-semibold text-center">Elige tus números de la suerte (1-1000)</h3>
+            <p class="text-center text-sm">$10,000 COP por número - Seleccionados: {{ form.selectedNumbers.length }}</p>
             
-            <div class="grid grid-cols-5 sm:grid-cols-10 gap-2">
-              <button
-                v-for="number in availableNumbers"
-                :key="number"
-                @click="form.selectedNumber = number"
-                class="aspect-square flex items-center justify-center rounded-md border transition-colors"
-                :class="{
-                  'bg-[#1A8ACC] text-white border-[#1A8ACC]': form.selectedNumber === number,
-                  'border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': form.selectedNumber !== number && !takenNumbers.includes(number),
-                  'bg-gray-200 dark:bg-gray-700 cursor-not-allowed': takenNumbers.includes(number),
-                  'border-red-500': takenNumbers.includes(number)
-                }"
-                :disabled="isLoading || takenNumbers.includes(number)"
-                :title="takenNumbers.includes(number) ? 'Número ya seleccionado' : `Seleccionar número ${number}`"
-              >
-                {{ number }}
-              </button>
+            <div class="overflow-auto max-h-[500px] border rounded-lg p-2">
+              <div class="grid grid-cols-10 gap-2">  <!-- Aumenté el gap a 2 -->
+  <button
+    v-for="number in availableNumbers"
+    :key="number"
+    @click="toggleNumberSelection(number)"
+    class="h-12 w-12 flex items-center justify-center rounded-md border transition-colors text-sm"  
+    :class="{
+      'bg-[#1A8ACC] text-white border-[#1A8ACC]': form.selectedNumbers.includes(number),
+      'border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': !form.selectedNumbers.includes(number) && !takenNumbers.includes(number),
+      'bg-gray-200 dark:bg-gray-700 cursor-not-allowed': takenNumbers.includes(number),
+      'border-red-500': takenNumbers.includes(number)
+    }"
+    :disabled="isLoading || takenNumbers.includes(number)"
+    :title="takenNumbers.includes(number) ? 'Número ya seleccionado' : `Seleccionar número ${number}`"
+  >
+    {{ number }}
+  </button>
+</div>
             </div>
             
-            <p v-if="form.selectedNumber" class="text-center text-sm mt-2">
-              Seleccionado: <span class="font-bold">{{ form.selectedNumber }}</span>
-            </p>
+            <div v-if="form.selectedNumbers.length > 0" class="mt-4 p-3 bg-blue-50 rounded-lg">
+              <p class="font-semibold text-blue-800">Resumen de selección:</p>
+              <p class="text-sm">Números elegidos: {{ form.selectedNumbers.join(', ') }}</p>
+              <p class="font-bold mt-1">Total a pagar: ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
+            </div>
           </div>
 
+          <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 class="font-bold text-blue-800 mb-2">Información de pago:</h4>
+            <p class="text-blue-700">Por transferencia bancaria o Nequi a:</p>
+            <p class="font-mono bg-white p-2 rounded mt-1">Banco: Bancolombia<br>Cuenta: 123-456-789<br>Titular: Nombre del Administrador</p>
+            <p class="text-blue-700 mt-2">Valor por número: $10,000 COP</p>
+          </div>
+          
           <Button 
             @click="handleSubmit"
             class="w-full font-bold group/arrow bg-[#1A8ACC] hover:bg-[#1A8ACC]/80 mt-6"
             :disabled="isLoading"
           >
-            <span v-if="!isLoading">Participar en la rifa</span>
-            <span v-else>Procesando tu registro...</span>
+            <span>Continuar a WhatsApp</span>
           </Button>
           
+          <div class="bg-green-50 p-4 rounded-lg border border-green-200" v-if="form.selectedNumbers.length > 0">
+            <h4 class="font-bold text-green-800 mb-2">¡Importante!</h4>
+            <p class="text-green-700">Por favor envía el pago exacto de <strong>${{ totalPrice.toLocaleString('es-CO') }} COP</strong> correspondiente a {{ form.selectedNumbers.length }} número(s).</p>
+            <p class="text-green-700 mt-1">Incluye en el mensaje de WhatsApp el número de referencia de tu transferencia.</p>
+          </div>
+          
           <p class="text-xs text-center text-gray-500 dark:text-gray-400">
-            Al participar aceptas nuestros términos y condiciones. Solo un registro por persona.
+            Al participar aceptas nuestros términos y condiciones. Los números se reservan solo después de confirmado el pago.
           </p>
+        </div>
+      </div>
+      
+      <!-- Sección para administrador -->
+      <div class="w-full max-w-6xl bg-gray-100 p-4 rounded-lg mt-8" v-if="showAdminPanel">
+        <h3 class="font-bold text-lg mb-3">Panel de Administrador</h3>
+        
+        <div v-if="!isAdminAuthenticated" class="space-y-4 p-4 bg-white rounded-lg mb-4">
+          <h4 class="font-medium">Autenticación requerida</h4>
+          <div class="space-y-2">
+            <Input v-model="adminCredentials.email" placeholder="Correo electrónico" type="email" />
+            <Input v-model="adminCredentials.password" placeholder="Contraseña" type="password" />
+            <Button @click="loginAdmin" class="w-full bg-blue-600 hover:bg-blue-700">
+              Iniciar sesión
+            </Button>
+          </div>
+        </div>
+        
+        <div v-if="isAdminAuthenticated" class="space-y-3">
+          <div class="bg-green-50 p-2 rounded text-green-800 text-sm mb-3">
+            Autenticado como administrador
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium mb-1">Marcar números como ocupados:</label>
+            <Input 
+              v-model="adminNumbersInput" 
+              placeholder="Ej: 5, 12, 34" 
+              class="w-full mb-2"
+            />
+            <Button @click="markAdminNumbers" class="bg-green-600 hover:bg-green-700">
+              Marcar como ocupados
+            </Button>
+          </div>
+          <div>
+            <p class="text-sm font-medium">Números ocupados actuales ({{ takenNumbers.length }}):</p>
+            <p class="text-sm overflow-auto max-h-[100px] border p-2 bg-white rounded">{{ takenNumbers.join(', ') || 'Ninguno' }}</p>
+          </div>
+          <div>
+            <Button @click="clearAllTakenNumbers" class="bg-red-600 hover:bg-red-700 mt-2">
+              Limpiar todos los números ocupados
+            </Button>
+          </div>
         </div>
       </div>
     </div>
