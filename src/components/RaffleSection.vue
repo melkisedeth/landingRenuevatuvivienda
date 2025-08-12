@@ -269,24 +269,24 @@ onMounted(() => {
             <p class="text-center text-sm">$10,000 COP por número - Seleccionados: {{ form.selectedNumbers.length }}</p>
             
             <div class="overflow-auto max-h-[500px] border rounded-lg p-2">
-              <div class="grid grid-cols-10 gap-2">  <!-- Aumenté el gap a 2 -->
-  <button
-    v-for="number in availableNumbers"
-    :key="number"
-    @click="toggleNumberSelection(number)"
-    class="h-12 w-12 flex items-center justify-center rounded-md border transition-colors text-sm"  
-    :class="{
-      'bg-[#1A8ACC] text-white border-[#1A8ACC]': form.selectedNumbers.includes(number),
-      'border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': !form.selectedNumbers.includes(number) && !takenNumbers.includes(number),
-      'bg-gray-200 dark:bg-gray-700 cursor-not-allowed': takenNumbers.includes(number),
-      'border-red-500': takenNumbers.includes(number)
-    }"
-    :disabled="isLoading || takenNumbers.includes(number)"
-    :title="takenNumbers.includes(number) ? 'Número ya seleccionado' : `Seleccionar número ${number}`"
-  >
-    {{ number }}
-  </button>
-</div>
+              <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1 sm:gap-2">
+                <button
+                  v-for="number in availableNumbers"
+                  :key="number"
+                  @click="toggleNumberSelection(number)"
+                  class="h-10 sm:h-12 w-full flex items-center justify-center rounded-md border transition-colors text-xs sm:text-sm"
+                  :class="{
+                    'bg-[#1A8ACC] text-white border-[#1A8ACC]': form.selectedNumbers.includes(number),
+                    'border-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': !form.selectedNumbers.includes(number) && !takenNumbers.includes(number),
+                    'bg-gray-200 dark:bg-gray-700 cursor-not-allowed': takenNumbers.includes(number),
+                    'border-red-500': takenNumbers.includes(number)
+                  }"
+                  :disabled="isLoading || takenNumbers.includes(number)"
+                  :title="takenNumbers.includes(number) ? 'Número ya seleccionado' : `Seleccionar número ${number}`"
+                >
+                  {{ number }}
+                </button>
+              </div>
             </div>
             
             <div v-if="form.selectedNumbers.length > 0" class="mt-4 p-3 bg-blue-50 rounded-lg">
@@ -296,19 +296,54 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-            <h4 class="font-bold text-blue-800 mb-2">Información de pago:</h4>
-            <p class="text-blue-700">Por transferencia bancaria o Nequi a:</p>
-            <p class="font-mono bg-white p-2 rounded mt-1">Banco: Bancolombia<br>Cuenta: 123-456-789<br>Titular: Nombre del Administrador</p>
-            <p class="text-blue-700 mt-2">Valor por número: $10,000 COP</p>
+          <!-- Sección de pago mejorada -->
+          <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-300 shadow-sm">
+            <h4 class="font-bold text-blue-800 text-lg mb-3 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" />
+                <path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd" />
+              </svg>
+              Información de pago
+            </h4>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+              <div class="bg-white p-3 rounded-lg border border-blue-200">
+                <h5 class="font-semibold text-blue-700 mb-2">Transferencia Bancolombia</h5>
+                <div class="space-y-1 text-sm">
+                  <p><span class="font-medium">Titular:</span> Nombre del Administrador</p>
+                  <p><span class="font-medium">Tipo de cuenta:</span> Ahorros</p>
+                  <p><span class="font-medium">Número:</span> 123-456-789</p>
+                  <p><span class="font-medium">Valor:</span> $10,000 COP por número</p>
+                </div>
+              </div>
+              
+              <div class="bg-white p-3 rounded-lg border border-blue-200">
+                <h5 class="font-semibold text-blue-700 mb-2">Pago por Nequi</h5>
+                <div class="space-y-1 text-sm">
+                  <p><span class="font-medium">Número:</span> 312 591 9606</p>
+                  <p><span class="font-medium">Nombre:</span> Nombre del Administrador</p>
+                  <p><span class="font-medium">Valor exacto:</span> ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
+                  <p class="text-xs text-red-600 mt-2">* Incluye referencia con tu nombre</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="mt-3 bg-blue-100 p-2 rounded text-sm text-blue-800">
+              <p class="font-medium">⚠️ Importante:</p>
+              <p>Envía el comprobante de pago por WhatsApp con el mensaje generado automáticamente.</p>
+              <p class="mt-1">Los números se reservan solo después de confirmado el pago.</p>
+            </div>
           </div>
           
           <Button 
             @click="handleSubmit"
-            class="w-full font-bold group/arrow bg-[#1A8ACC] hover:bg-[#1A8ACC]/80 mt-6"
+            class="w-full font-bold group/arrow bg-[#1A8ACC] hover:bg-[#1A8ACC]/80 mt-6 py-6 text-lg"
             :disabled="isLoading"
           >
             <span>Continuar a WhatsApp</span>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2 group-hover/arrow:translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+            </svg>
           </Button>
           
           <div class="bg-green-50 p-4 rounded-lg border border-green-200" v-if="form.selectedNumbers.length > 0">
