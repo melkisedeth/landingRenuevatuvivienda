@@ -22,6 +22,7 @@
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
     "@selemondev/vue3-marquee": "^0.0.8",
+    "@shadcn/ui": "^0.0.4",
     "@vee-validate/zod": "^4.13.2",
     "@vueuse/core": "^11.1.0",
     "class-variance-authority": "^0.7.0",
@@ -31,6 +32,7 @@
     "embla-carousel-vue": "^8.3.0",
     "express": "^5.1.0",
     "firebase": "^12.1.0",
+    "jspdf": "^3.0.1",
     "lucide-vue-next": "^0.452.0",
     "radix-vue": "^1.9.7",
     "swiper": "^11.2.10",
