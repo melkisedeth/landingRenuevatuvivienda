@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { doc, getDoc, setDoc, collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { auth, db, signInWithEmailAndPassword } from '@/lib/firebase';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
