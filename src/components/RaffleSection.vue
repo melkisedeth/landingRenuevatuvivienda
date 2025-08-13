@@ -251,6 +251,7 @@ const clearAllTakenNumbers = async () => {
   }
 };
 
+
 // Confirmar pago de participante
 // Confirmar pago de participante y marcar números como ocupados
 const confirmPayment = async (participantId: string) => {
