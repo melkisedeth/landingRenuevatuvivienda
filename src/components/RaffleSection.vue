@@ -18,7 +18,7 @@ const form = ref({
 const availableNumbers = ref(Array.from({ length: 1000 }, (_, i) => i + 1));
 const takenNumbers = ref<number[]>([]);
 const isLoading = ref(false);
-const ticketPrice = 10000; // 10,000 COP por número
+const ticketPrice = 20000; // 20,000 COP por número (ACTUALIZADO)
 const showAdminPanel = ref(true); // Cambiar a true para mostrar el panel de admin
 
 // Variables para el panel de administrador
@@ -188,7 +188,7 @@ Números seleccionados: ${numbersList}
 Total a pagar: $${totalPrice.value.toLocaleString('es-CO')} COP
 Número de boleta: ${ticketNumber}
 
-Por favor enviaré el comprobante de pago en seguida.`;
+Enviaré el comprobante de pago en seguida.`;
 
   return `https://wa.me/${adminData.value.phone}?text=${encodeURIComponent(message)}`;
 };
@@ -251,8 +251,15 @@ const clearAllTakenNumbers = async () => {
   }
 };
 
+// Reiniciar formulario después de enviar
+const resetForm = () => {
+  form.value = {
+    name: '',
+    phone: '',
+    selectedNumbers: []
+  };
+};
 
-// Confirmar pago de participante
 // Confirmar pago de participante y marcar números como ocupados
 const confirmPayment = async (participantId: string) => {
   if (!isAdminAuthenticated.value) return;
@@ -292,71 +299,151 @@ const confirmPayment = async (participantId: string) => {
     alert("Error al confirmar el pago");
   }
 };
-// Generar PDF de la boleta
+
 const generateTicketPDF = async (participant: any) => {
   try {
-    // Crear elemento HTML para la boleta
+    // Crear elemento HTML para la boleta con diseño profesional
     const ticketElement = document.createElement('div');
     ticketElement.style.width = '600px';
-    ticketElement.style.padding = '20px';
+    ticketElement.style.padding = '30px';
     ticketElement.style.backgroundColor = '#ffffff';
     ticketElement.style.border = '2px solid #1A8ACC';
     ticketElement.style.borderRadius = '10px';
-    ticketElement.style.fontFamily = 'Arial, sans-serif';
+    ticketElement.style.fontFamily = "'Arial', sans-serif";
+    ticketElement.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+    ticketElement.style.position = 'fixed';
+    ticketElement.style.left = '-9999px'; // Mover fuera de pantalla
 
+    // Formatear la fecha
+    const date = new Date(participant.createdAt);
+    const formattedDate = date.toLocaleDateString('es-CO', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Contenido HTML de la boleta
     ticketElement.innerHTML = `
       <div style="text-align: center; margin-bottom: 20px;">
-        <h1 style="color: #1A8ACC; margin-bottom: 5px;">Rifa de Beneficencia</h1>
-        <h2 style="color: #333; margin-top: 0;">Boleta de Participación</h2>
+        <div style="font-size: 24px; font-weight: bold; color: #1A8ACC; margin-bottom: 5px;">RIFA TELEVISOR</div>
+        <div style="font-size: 14px; color: #666;">Boleta Virtual - N° ${participant.ticketNumber}</div>
+        <div style="height: 2px; background: linear-gradient(to right, #1A8ACC, #9C27B0); margin: 15px 0;"></div>
       </div>
       
-      <div style="margin-bottom: 15px;">
-        <p style="margin: 5px 0;"><strong>Número de boleta:</strong> ${participant.ticketNumber}</p>
-        <p style="margin: 5px 0;"><strong>Fecha:</strong> ${new Date(participant.createdAt).toLocaleDateString()}</p>
-      </div>
-      
-      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-        <h3 style="margin-top: 0; color: #1A8ACC;">Datos del Participante</h3>
-        <p style="margin: 5px 0;"><strong>Nombre:</strong> ${participant.name}</p>
-        <p style="margin: 5px 0;"><strong>Teléfono:</strong> ${participant.phone}</p>
-      </div>
-      
-      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-        <h3 style="margin-top: 0; color: #1A8ACC;">Números Seleccionados</h3>
-        <p style="margin: 5px 0;">${participant.numbers.join(', ')}</p>
-      </div>
-      
-      <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 15px;">
-        <h3 style="margin-top: 0; color: #1A8ACC;">Detalles de Pago</h3>
-        <p style="margin: 5px 0;"><strong>Total pagado:</strong> $${participant.totalAmount.toLocaleString('es-CO')} COP</p>
-        <p style="margin: 5px 0;"><strong>Estado:</strong> ${participant.paymentConfirmed ? 'CONFIRMADO' : 'PENDIENTE'}</p>
-        ${participant.paymentConfirmed ? `<p style="margin: 5px 0;"><strong>Fecha confirmación:</strong> ${new Date(participant.confirmedAt).toLocaleDateString()}</p>` : ''}
-      </div>
-      
-      <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #666;">
-        <p>Esta boleta es el comprobante de participación en la rifa.</p>
-        <p>Consérvela para reclamar premios en caso de ser ganador.</p>
-      </div>
-      
-      <div style="margin-top: 20px; text-align: center;">
-        <div style="display: inline-block; padding: 10px 20px; background-color: #1A8ACC; color: white; border-radius: 5px;">
-          ¡Gracias por participar!
+      <div style="display: flex; justify-content: space-between; margin-bottom: 25px;">
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: #666; margin-bottom: 3px;">FECHA DE REGISTRO</div>
+          <div style="font-size: 14px; font-weight: bold;">${formattedDate}</div>
         </div>
+        <div style="flex: 1; text-align: right;">
+          <div style="font-size: 12px; color: #666; margin-bottom: 3px;">ESTADO</div>
+          <div style="font-size: 14px; font-weight: bold; color: ${participant.paymentConfirmed ? '#28a745' : '#ffc107'}">
+            ${participant.paymentConfirmed ? 'PAGO CONFIRMADO' : 'PENDIENTE DE PAGO'}
+          </div>
+        </div>
+      </div>
+      
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="display: flex; margin-bottom: 10px;">
+          <div style="flex: 1;">
+            <div style="font-size: 12px; color: #666; margin-bottom: 3px;">PARTICIPANTE</div>
+            <div style="font-size: 16px; font-weight: bold;">${participant.name}</div>
+          </div>
+          <div style="flex: 1;">
+            <div style="font-size: 12px; color: #666; margin-bottom: 3px;">TELÉFONO</div>
+            <div style="font-size: 16px; font-weight: bold;">${participant.phone}</div>
+          </div>
+        </div>
+      </div>
+      
+     <div style="margin-bottom: 20px;">
+  <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px; color: #1A8ACC;">NÚMEROS SELECCIONADOS</div>
+  <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+    ${participant.numbers.map((num: number) => `
+      <div style="
+        width: 40px; 
+        height: 40px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        background: ${takenNumbers.value.includes(num) ? '#1A8ACC' : '#f8f9fa'};
+        color: ${takenNumbers.value.includes(num) ? 'white' : '#333'};
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-weight: bold;
+        line-height: 1; /* Asegura que no haya espacio extra */
+        ${takenNumbers.value.includes(num) && !participant.paymentConfirmed ? 'position: relative;' : ''}
+      ">
+        <span style="display: inline-block; margin: 0; padding: 0;">${num}</span>
+        ${takenNumbers.value.includes(num) && !participant.paymentConfirmed ?
+        '<div style="position: absolute; bottom: -5px; right: 0; left: 0; text-align: center; font-size: 10px; color: red;">⚠️</div>' : ''}
+      </div>
+    `).join('')}
+  </div>
+</div>
+      
+      <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 25px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="font-size: 12px; color: #666; margin-bottom: 3px;">VALOR TOTAL</div>
+            <div style="font-size: 24px; font-weight: bold; color: #1A8ACC;">
+              ${participant.totalAmount.toLocaleString('es-CO', { style: 'currency', currency: 'COP' })}
+            </div>
+          </div>
+          ${participant.paymentConfirmed ? `
+            <div style="text-align: right;">
+              <div style="font-size: 12px; color: #666; margin-bottom: 3px;">FECHA DE CONFIRMACIÓN</div>
+              <div style="font-size: 14px; font-weight: bold;">
+                ${new Date(participant.confirmedAt).toLocaleDateString('es-CO')}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+      
+      <div style="border-top: 1px dashed #ddd; padding-top: 15px; margin-bottom: 20px;">
+        <div style="font-size: 12px; color: #666; margin-bottom: 10px;">INSTRUCCIONES:</div>
+        <ol style="font-size: 12px; color: #333; padding-left: 15px; margin: 0;">
+          <li style="margin-bottom: 5px;">Esta boleta es tu comprobante de participación.</li>
+          <li style="margin-bottom: 5px;">Los números se reservan solo después de confirmado el pago.</li>
+          <li style="margin-bottom: 5px;">Presenta esta boleta para reclamar premios.</li>
+        </ol>
+      </div>
+      
+      <div style="text-align: center; font-size: 10px; color: #999; margin-top: 20px;">
+        <div style="margin-bottom: 5px;">© ${new Date().getFullYear()} Rifa Televisor - Todos los derechos reservados</div>
+        <div>Boleta generada automáticamente el ${new Date().toLocaleDateString('es-CO')}</div>
+      </div>
+      
+      <div style="position: absolute; bottom: 10px; right: 10px; opacity: 0.1;">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="#1A8ACC">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z"/>
+        </svg>
       </div>
     `;
 
     document.body.appendChild(ticketElement);
 
     // Convertir a canvas y luego a PDF
-    const canvas = await html2canvas(ticketElement);
+    const canvas = await html2canvas(ticketElement, {
+      scale: 2, // Mayor resolución
+      logging: false,
+      useCORS: true
+    });
+
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF('p', 'mm', 'a4');
-    const imgProps = pdf.getImageProperties(imgData);
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`boleta_rifa_${participant.ticketNumber}.pdf`);
+    // Centrar la boleta en el PDF
+    const xPos = 0; // Margen izquierdo
+    const yPos = (pdf.internal.pageSize.getHeight() - pdfHeight) / 2;
+
+    pdf.addImage(imgData, 'PNG', xPos, yPos, pdfWidth, pdfHeight);
+    pdf.save(`Boleta_Rifa_${participant.ticketNumber}.pdf`);
 
     document.body.removeChild(ticketElement);
   } catch (error) {
@@ -401,8 +488,9 @@ const handleSubmit = async () => {
 
   try {
     const ticketNumber = await saveParticipant();
-    window.open(generateWhatsAppLink(ticketNumber), '_blank');
-
+    const whatsappLink = generateWhatsAppLink(ticketNumber);
+    
+    // Mostrar mensaje de confirmación
     alert(`¡Perfecto! Se abrirá WhatsApp para que envíes tus datos. 
     
 IMPORTANTE:
@@ -412,6 +500,15 @@ IMPORTANTE:
 
 Total a pagar: $${totalPrice.value.toLocaleString('es-CO')} COP
 Número de boleta: ${ticketNumber}`);
+
+    // Abrir WhatsApp en una nueva pestaña
+    window.open(whatsappLink, '_blank');
+    
+    // Reiniciar el formulario después de un breve retraso
+    setTimeout(() => {
+      resetForm();
+    }, 1000);
+    
   } catch (error) {
     alert("Ocurrió un error al procesar tu participación. Por favor intenta nuevamente.");
   }
@@ -436,13 +533,13 @@ onMounted(() => {
         </div>
 
         <p class="max-w-screen-sm mx-auto text-xl text-muted-foreground">
-          Elige tus números de la suerte y participa para ganar increíbles premios. ¡Cada número cuesta $10,000 COP!
+          Elige tus números de la suerte y participa para ganar increíbles premios. ¡Cada número cuesta $20,000 COP!
         </p>
 
         <div class="bg-yellow-100 border-l-4 border-yellow-500 p-4 text-left max-w-screen-sm mx-auto">
           <p class="font-bold text-yellow-700">Instrucciones para participar:</p>
           <ol class="list-decimal list-inside text-yellow-700 space-y-1 mt-2">
-            <li>Selecciona uno o más números (cada uno vale $10,000 COP)</li>
+            <li>Selecciona uno o más números (cada uno vale $20,000 COP)</li>
             <li>Completa tus datos personales</li>
             <li>Te redirigiremos a WhatsApp para confirmar</li>
             <li>Envía el comprobante de transferencia por el total</li>
@@ -466,7 +563,7 @@ onMounted(() => {
 
           <div class="space-y-4">
             <h3 class="text-lg font-semibold text-center">Elige tus números de la suerte (1-1000)</h3>
-            <p class="text-center text-sm">$10,000 COP por número - Seleccionados: {{ form.selectedNumbers.length }}</p>
+            <p class="text-center text-sm">$20,000 COP por número - Seleccionados: {{ form.selectedNumbers.length }}</p>
 
             <div class="overflow-auto max-h-[500px] border rounded-lg p-2">
               <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1 sm:gap-2">
@@ -506,10 +603,10 @@ onMounted(() => {
               <div class="bg-white p-3 rounded-lg border border-blue-200">
                 <h5 class="font-semibold text-blue-700 mb-2">Transferencia Bancolombia</h5>
                 <div class="space-y-1 text-sm">
-                  <p><span class="font-medium">Titular:</span> Nombre del Administrador</p>
-                  <p><span class="font-medium">Tipo de cuenta:</span> Ahorros</p>
-                  <p><span class="font-medium">Número:</span> 123-456-789</p>
-                  <p><span class="font-medium">Valor:</span> $10,000 COP por número</p>
+                  <p><span class="font-medium">Titular:</span> MEQUICIDETH TOBIAS NAVARRO</p>
+                  <p><span class="font-medium">Tipo de cuenta:</span> AHORROS</p>
+                  <p><span class="font-medium">Número:</span> 91285870530</p>
+                  <p><span class="font-medium">Valor:</span> $20,000 COP por número</p>
                 </div>
               </div>
 
@@ -517,9 +614,8 @@ onMounted(() => {
                 <h5 class="font-semibold text-blue-700 mb-2">Pago por Nequi</h5>
                 <div class="space-y-1 text-sm">
                   <p><span class="font-medium">Número:</span> 312 591 9606</p>
-                  <p><span class="font-medium">Nombre:</span> Nombre del Administrador</p>
+                  <p><span class="font-medium">Nombre:</span> MEQUICIDETH TOBIAS NAVARRO</p>
                   <p><span class="font-medium">Valor exacto:</span> ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
-                  <p class="text-xs text-red-600 mt-2">* Incluye referencia con tu nombre</p>
                 </div>
               </div>
             </div>
@@ -547,7 +643,7 @@ onMounted(() => {
           <div class="bg-green-50 p-4 rounded-lg border border-green-200" v-if="form.selectedNumbers.length > 0">
             <h4 class="font-bold text-green-800 mb-2">¡Importante!</h4>
             <p class="text-green-700">Por favor envía el pago exacto de <strong>${{ totalPrice.toLocaleString('es-CO')
-                }} COP</strong> correspondiente a {{ form.selectedNumbers.length }} número(s).</p>
+            }} COP</strong> correspondiente a {{ form.selectedNumbers.length }} número(s).</p>
             <p class="text-green-700 mt-1">Incluye en el mensaje de WhatsApp el número de referencia de tu
               transferencia.</p>
           </div>
@@ -590,7 +686,7 @@ onMounted(() => {
 
             <div>
               <label class="block text-sm font-medium mb-1">Números ocupados actuales ({{ takenNumbers.length
-                }}):</label>
+              }}):</label>
               <p class="text-sm overflow-auto max-h-[100px] border p-2 bg-white rounded">{{ takenNumbers.join(', ') ||
                 'Ninguno' }}</p>
               <Button @click="clearAllTakenNumbers" class="bg-red-600 hover:bg-red-700 mt-2">
@@ -639,7 +735,7 @@ onMounted(() => {
                     </td>
                     <td class="py-2 px-4">
                       {{ participant.totalAmount?.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }) ||
-                      '$0' }}
+                        '$0' }}
                     </td>
                     <td class="py-2 px-4">
                       <span :class="{

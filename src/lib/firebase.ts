@@ -9,7 +9,7 @@ const firebaseConfig = {
   projectId: "cotiznow-a609d",
   storageBucket: "cotiznow-a609d.appspot.com",
   messagingSenderId: "688465903436",
-  appId: "1:688465903436:web:b66132ecf04fe3e6a9d9e9" // Reemplaza con tu App ID real
+  appId: "1:688465903436:web:b66132ecf04fe3e6a9d9e9"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -27,6 +27,5 @@ export {
   signInWithEmailAndPassword 
 };
 
-// Opcional: Exporta tipos útiles si los necesitas
 export type DocumentReference = ReturnType<typeof doc>;
 export type CollectionReference = ReturnType<typeof collection>;
