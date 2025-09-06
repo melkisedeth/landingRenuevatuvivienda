@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, collection, doc, setDoc, getDoc } from "firebase/firestore";
+import { getFirestore, collection, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc, getDocs } from "firebase/firestore";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 // Configuración de Firebase para CotizNow
 const firebaseConfig = {
@@ -16,15 +17,24 @@ const app = initializeApp(firebaseConfig);
 
 const db = getFirestore(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 
 export { 
   db, 
   auth,
+  storage,
   collection, 
   doc, 
   setDoc, 
   getDoc,
-  signInWithEmailAndPassword 
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  getDocs,
+  signInWithEmailAndPassword,
+  ref,
+  uploadBytes,
+  getDownloadURL
 };
 
 export type DocumentReference = ReturnType<typeof doc>;
