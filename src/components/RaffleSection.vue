@@ -36,10 +36,12 @@
           </div>
 
           <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número de teléfono (con WhatsApp)</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número de teléfono (con
+              WhatsApp)</label>
             <Input v-model="form.phone" placeholder="Ingresa tu teléfono (10-15 dígitos)" type="tel" class="w-full"
               :disabled="isLoading" />
-            <p class="text-sm text-muted-foreground mt-1">Este teléfono debe tener WhatsApp activo para recibir tu boleta</p>
+            <p class="text-sm text-muted-foreground mt-1">Este teléfono debe tener WhatsApp activo para recibir tu
+              boleta</p>
           </div>
 
           <div class="space-y-4">
@@ -50,8 +52,7 @@
               <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1 sm:gap-2">
                 <button v-for="number in availableNumbers" :key="number" @click="toggleNumberSelection(number)"
                   class="h-10 sm:h-12 w-full flex items-center justify-center rounded-md border transition-colors text-xs sm:text-sm"
-                  :class="getNumberClass(number)"
-                  :disabled="isLoading || !isNumberAvailable(number)"
+                  :class="getNumberClass(number)" :disabled="isLoading || !isNumberAvailable(number)"
                   :title="getNumberTitle(number)">
                   {{ number }}
                   <span v-if="isNumberReserved(number)" class="ml-1 text-xs">⏱️</span>
@@ -114,14 +115,16 @@
             :disabled="isLoading || !canSubmit">
             <span>Subir Comprobante de Pago</span>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+              <path fill-rule="evenodd"
+                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                clip-rule="evenodd" />
             </svg>
           </Button>
 
           <div class="bg-green-50 p-4 rounded-lg border border-green-200" v-if="form.selectedNumbers.length > 0">
             <h4 class="font-bold text-green-800 mb-2">¡Importante!</h4>
             <p class="text-green-700">Por favor envía el pago exacto de <strong>${{ totalPrice.toLocaleString('es-CO')
-            }} COP</strong> correspondiente a {{ form.selectedNumbers.length }} número(s).</p>
+                }} COP</strong> correspondiente a {{ form.selectedNumbers.length }} número(s).</p>
             <p class="text-green-700 mt-1">Sube el comprobante en el formulario y recibirás tu boleta por WhatsApp.</p>
           </div>
 
@@ -136,7 +139,7 @@
       <div v-if="showReceiptModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
           <h2 class="text-xl font-bold mb-4">Subir Comprobante de Pago</h2>
-          
+
           <div class="mb-4 p-4 bg-blue-50 rounded-lg">
             <p class="font-semibold text-blue-800">Resumen de tu compra:</p>
             <p class="text-sm">Números: {{ form.selectedNumbers.join(', ') }}</p>
@@ -145,17 +148,20 @@
 
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu comprobante:</label>
-            <input type="file" accept="image/*" @change="handleReceiptUpload" class="w-full px-3 py-2 border border-gray-300 rounded-md">
-            
+            <input type="file" accept="image/*" @change="handleReceiptUpload"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md">
+
             <div v-if="receiptPreview" class="mt-4">
               <p class="text-sm font-medium text-gray-700 mb-2">Vista previa:</p>
-              <img :src="receiptPreview" alt="Vista previa del comprobante" class="max-w-full max-h-40 object-contain border rounded">
+              <img :src="receiptPreview" alt="Vista previa del comprobante"
+                class="max-w-full max-h-40 object-contain border rounded">
             </div>
           </div>
 
           <div class="mb-4 p-4 bg-yellow-50 rounded-lg">
             <p class="text-sm text-yellow-700">
-              <span class="font-bold">Importante:</span> Tu boleta será enviada por WhatsApp al número que registraste una vez validemos el pago. 
+              <span class="font-bold">Importante:</span> Tu boleta será enviada por WhatsApp al número que registraste
+              una vez validemos el pago.
               Asegúrate de tener WhatsApp activo en este teléfono.
             </p>
           </div>
@@ -175,7 +181,7 @@
       <div v-if="showReceiptViewer" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-lg p-6 w-full max-w-md">
           <h2 class="text-xl font-bold mb-4">Comprobante de Pago</h2>
-          
+
           <div class="mb-4">
             <p class="text-sm text-gray-600 mb-2">Participante: {{ currentParticipant?.name }}</p>
             <img :src="currentReceiptUrl" alt="Comprobante de pago" class="w-full h-auto max-h-96 object-contain">
@@ -245,9 +251,11 @@
                   <tr v-for="reservation in temporaryReservations" :key="reservation.participantId">
                     <td class="py-2 px-4">{{ reservation.participantId.slice(0, 8) }}...</td>
                     <td class="py-2 px-4">{{ reservation.numbers.join(', ') }}</td>
-                    <td class="py-2 px-4">{{ Math.max(0, Math.floor((reservationTimeout - (Date.now() - reservation.timestamp)) / 60000)) }} minutos</td>
+                    <td class="py-2 px-4">{{ Math.max(0, Math.floor((reservationTimeout - (Date.now() -
+                      reservation.timestamp)) / 60000)) }} minutos</td>
                     <td class="py-2 px-4">
-                      <Button @click="releaseReservation(reservation.participantId)" size="sm" class="bg-red-600 hover:bg-red-700">
+                      <Button @click="releaseReservation(reservation.participantId)" size="sm"
+                        class="bg-red-600 hover:bg-red-700">
                         Liberar
                       </Button>
                     </td>
@@ -302,7 +310,8 @@
                         '$0' }}
                     </td>
                     <td class="py-2 px-4">
-                      <Button v-if="participant.receiptUrl" @click="viewReceipt(participant)" variant="outline" size="sm">
+                      <Button v-if="participant.receiptUrl" @click="viewReceipt(participant)" variant="outline"
+                        size="sm">
                         Ver comprobante
                       </Button>
                       <span v-else class="text-gray-400 text-sm">Sin comprobante</span>
@@ -363,7 +372,7 @@ const form = ref({
 // Configuración
 const availableNumbers = ref(Array.from({ length: 1000 }, (_, i) => i + 1));
 const takenNumbers = ref<number[]>([]);
-const temporaryReservations = ref<{numbers: number[], timestamp: number, participantId: string}[]>([]);
+const temporaryReservations = ref<{ numbers: number[], timestamp: number, participantId: string }[]>([]);
 const temporaryReservationId = ref<string | null>(null);
 const isLoading = ref(false);
 const ticketPrice = 20000; // 20,000 COP por número
@@ -401,9 +410,9 @@ const totalPrice = computed(() => {
 
 // Validar si se puede enviar el formulario
 const canSubmit = computed(() => {
-  return form.value.name.trim() && 
-         isValidPhone(form.value.phone) && 
-         form.value.selectedNumbers.length > 0;
+  return form.value.name.trim() &&
+    isValidPhone(form.value.phone) &&
+    form.value.selectedNumbers.length > 0;
 });
 
 // Validaciones
@@ -427,20 +436,20 @@ const isNumberAvailable = (number: number): boolean => {
   if (takenNumbers.value.includes(number)) {
     return false;
   }
-  
+
   // Verificar si el número está reservado temporalmente
-  const isReserved = temporaryReservations.value.some(reservation => 
-    reservation.numbers.includes(number) && 
+  const isReserved = temporaryReservations.value.some(reservation =>
+    reservation.numbers.includes(number) &&
     (Date.now() - reservation.timestamp) < reservationTimeout
   );
-  
+
   return !isReserved;
 };
 
 // Verificar si un número está reservado temporalmente
 const isNumberReserved = (number: number): boolean => {
-  return temporaryReservations.value.some(reservation => 
-    reservation.numbers.includes(number) && 
+  return temporaryReservations.value.some(reservation =>
+    reservation.numbers.includes(number) &&
     (Date.now() - reservation.timestamp) < reservationTimeout
   );
 };
@@ -495,13 +504,13 @@ const loadTemporaryReservations = async () => {
   try {
     const querySnapshot = await getDocs(collection(db, "temporaryReservations"));
     const now = Date.now();
-    
+
     temporaryReservations.value = [];
-    
+
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       const timestamp = new Date(data.timestamp).getTime();
-      
+
       // Solo cargar reservas que aún no han expirado
       if ((now - timestamp) < reservationTimeout) {
         temporaryReservations.value.push({
@@ -522,15 +531,15 @@ const loadTemporaryReservations = async () => {
 // Suscribirse a cambios en tiempo real de reservas temporales
 const subscribeToTemporaryReservations = () => {
   const q = query(collection(db, "temporaryReservations"));
-  
+
   return onSnapshot(q, (querySnapshot) => {
     const now = Date.now();
     temporaryReservations.value = [];
-    
+
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       const timestamp = new Date(data.timestamp).getTime();
-      
+
       if ((now - timestamp) < reservationTimeout) {
         temporaryReservations.value.push({
           numbers: data.numbers || [],
@@ -590,31 +599,42 @@ const saveTakenNumbers = async () => {
 };
 
 // Enviar notificación por correo electrónico
-const sendReservationEmail = async (name: string, phone: string, numbers: number[], totalAmount: number) => {
+// Enviar notificación por correo electrónico cuando se sube comprobante
+const sendPaymentConfirmationEmail = async (name: string, phone: string, numbers: number[], totalAmount: number, ticketNumber: string, receiptUrl: string = '') => {
   try {
-    // Configurar EmailJS (servicio gratuito)
-    emailjs.init("YOUR_PUBLIC_KEY"); // Reemplaza con tu clave pública de EmailJS
+    // Configurar EmailJS
+    emailjs.init("uo0IOtQXwDo0wtN5D");
     
     const templateParams = {
-      to_email: "melkytobias10@gmail.com", // Reemplaza con tu email
+      to_email: "melkytobias10@gmail.com",
       from_name: "Sistema de Rifa",
-      participant_name: name,
-      participant_phone: phone,
-      numbers: numbers.join(', '),
-      total_amount: totalAmount.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }),
-      reservation_time: new Date().toLocaleString('es-CO')
+      name: name,
+      phone: phone,
+      numbers: numbers.join(', '), // Convertir array a string
+      numbersCount: numbers.length,
+      totalAmount: totalAmount.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }),
+      ticketNumber: ticketNumber,
+      time: new Date().toLocaleString('es-CO', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      receiptUrl: receiptUrl,
+      year: new Date().getFullYear(),
+      message: `Nuevo comprobante de pago recibido de ${name} (${phone}) para los números: ${numbers.join(', ')}`
     };
 
     await emailjs.send(
-      "service_x08uwpo", // Reemplaza con tu Service ID de EmailJS
-      "YOUR_TEMPLATE_ID", // Reemplaza con tu Template ID de EmailJS
+      "service_x08uwpo",
+      "template_t6eoyqm", // Asegúrate de que esta plantilla use {{numbers}} en lugar del loop {{#each numbers}}
       templateParams
     );
     
-    console.log("Correo de notificación enviado exitosamente");
+    console.log("Correo de notificación de comprobante enviado exitosamente");
   } catch (error) {
     console.error("Error enviando correo de notificación:", error);
-    // No mostrar error al usuario para no interrumpir el flujo
   }
 };
 
@@ -628,22 +648,19 @@ const reserveNumbersTemporarily = async (numbers: number[], participantId: strin
       timestamp: new Date().toISOString(),
       expiresAt: new Date(Date.now() + reservationTimeout).toISOString()
     });
-    
+
     // Actualizar estado local
     temporaryReservations.value.push({
       numbers,
       timestamp: Date.now(),
       participantId
     });
-    
-    // Enviar notificación por correo
-    sendReservationEmail(form.value.name, form.value.phone, numbers, totalPrice.value);
-    
+
     // Programar limpieza automática
     setTimeout(() => {
       releaseExpiredReservation(participantId);
     }, reservationTimeout);
-    
+
   } catch (error) {
     console.error("Error reservando números:", error);
     throw new Error("No se pudieron reservar los números");
@@ -656,7 +673,7 @@ const releaseExpiredReservation = async (participantId: string) => {
     // Eliminar de Firestore
     const reservationRef = doc(db, "temporaryReservations", participantId);
     await deleteDoc(reservationRef);
-    
+
     // Eliminar del estado local
     const index = temporaryReservations.value.findIndex(r => r.participantId === participantId);
     if (index !== -1) {
@@ -728,7 +745,6 @@ const loginAdmin = async () => {
     isAdminAuthenticated.value = true;
     await loadParticipants();
     await loadTemporaryReservations();
-    alert("Autenticación exitosa");
   } catch (error) {
     console.error("Error de autenticación:", error);
     alert("Credenciales incorrectas");
@@ -742,7 +758,7 @@ const toggleNumberSelection = (number: number) => {
     alert("Este número ya ha sido seleccionado por otro participante. Por favor elige otro.");
     return;
   }
-  
+
   const index = form.value.selectedNumbers.indexOf(number);
   if (index === -1) {
     form.value.selectedNumbers.push(number);
@@ -774,19 +790,25 @@ Por favor confírmenme cuando hayan validado el pago.`;
 const markNumbersAsTaken = async (numbers: number[]) => {
   try {
     isLoading.value = true;
-    const newNumbers = [...new Set([...takenNumbers.value, ...numbers])];
-    takenNumbers.value = newNumbers;
 
-    const docRef = doc(db, "raffle", "takenNumbers");
-    await setDoc(docRef, {
-      numbers: newNumbers,
-      lastUpdated: new Date().toISOString()
-    });
+    // Filtrar números que ya no están en takenNumbers
+    const newNumbers = numbers.filter(num => !takenNumbers.value.includes(num));
 
-    localStorage.setItem('takenNumbers', JSON.stringify(newNumbers));
+    if (newNumbers.length > 0) {
+      // Agregar solo los números nuevos
+      takenNumbers.value = [...takenNumbers.value, ...newNumbers];
+
+      const docRef = doc(db, "raffle", "takenNumbers");
+      await setDoc(docRef, {
+        numbers: takenNumbers.value,
+        lastUpdated: new Date().toISOString()
+      });
+
+      localStorage.setItem('takenNumbers', JSON.stringify(takenNumbers.value));
+    }
   } catch (error) {
-    console.error("Error marcando números como ocupados:", error);
-    alert("Error al marcar números como ocupados");
+    console.error("Error guardando números ocupados:", error);
+    localStorage.setItem('takenNumbers', JSON.stringify(takenNumbers.value));
     throw error;
   } finally {
     isLoading.value = false;
@@ -852,16 +874,35 @@ const confirmPayment = async (participantId: string) => {
       return;
     }
 
-    // Verificar si alguno de los números ya está ocupado
-    const alreadyTakenNumbers = participant.numbers.filter((num: number) => takenNumbers.value.includes(num));
+    // Verificar si alguno de los números ya está ocupado por OTRO participante
+    const alreadyTakenNumbers = participant.numbers.filter((num: number) => {
+      // Verificar si el número está en takenNumbers pero NO pertenece a este participante
+      if (takenNumbers.value.includes(num)) {
+        // Buscar si algún otro participante confirmado tiene este número
+        const otherParticipantWithSameNumber = participants.value.find(p =>
+          p.id !== participantId &&
+          p.paymentConfirmed &&
+          p.numbers.includes(num)
+        );
+        return otherParticipantWithSameNumber !== undefined;
+      }
+      return false;
+    });
+
     if (alreadyTakenNumbers.length > 0) {
-      alert(`No se puede confirmar el pago. Los siguientes números ya están ocupados: ${alreadyTakenNumbers.join(', ')}`);
+      alert(`No se puede confirmar el pago. Los siguientes números ya están ocupados por otros participantes: ${alreadyTakenNumbers.join(', ')}`);
       return;
     }
 
     if (confirm(`¿Confirmar que el pago ha sido recibido y marcar los números ${participant.numbers.join(', ')} como ocupados?`)) {
-      // Primero marcar los números como ocupados
-      await markNumbersAsTaken(participant.numbers);
+      // Primero marcar los números como ocupados (si no lo están ya)
+      const numbersToMark = participant.numbers.filter((num: number) =>
+        !takenNumbers.value.includes(num)
+      );
+
+      if (numbersToMark.length > 0) {
+        await markNumbersAsTaken(numbersToMark);
+      }
 
       // Luego actualizar el estado del participante
       const participantRef = doc(db, "participants", participantId);
@@ -869,6 +910,14 @@ const confirmPayment = async (participantId: string) => {
         paymentConfirmed: true,
         confirmedAt: new Date().toISOString()
       });
+
+      // Liberar cualquier reserva temporal que exista para este participante
+      try {
+        const reservationRef = doc(db, "temporaryReservations", participantId);
+        await deleteDoc(reservationRef);
+      } catch (error) {
+        console.log("No había reserva temporal o ya fue eliminada");
+      }
 
       // Recargar los datos
       await loadParticipants();
@@ -892,18 +941,18 @@ const deleteParticipant = async (participantId: string) => {
         alert("Participante no encontrado");
         return;
       }
-      
+
       // Liberar números ocupados
       if (participant.numbers && participant.numbers.length > 0) {
         // Filtrar los números del participante
-        takenNumbers.value = takenNumbers.value.filter(num => 
+        takenNumbers.value = takenNumbers.value.filter(num =>
           !participant.numbers.includes(num)
         );
-        
+
         // Guardar en Firebase
         await saveTakenNumbers();
       }
-      
+
       // Eliminar reserva temporal si existe
       try {
         const reservationRef = doc(db, "temporaryReservations", participantId);
@@ -911,11 +960,11 @@ const deleteParticipant = async (participantId: string) => {
       } catch (error) {
         console.log("No había reserva temporal o ya fue eliminada");
       }
-      
+
       // Finalmente eliminar al participante
       await deleteDoc(doc(db, "participants", participantId));
       await loadParticipants();
-      
+
       alert("Participante eliminado y números liberados correctamente");
     } catch (error) {
       console.error("Error eliminando participante:", error);
@@ -1130,7 +1179,7 @@ const closeReceiptModal = () => {
   showReceiptModal.value = false;
   receiptFile.value = null;
   receiptPreview.value = null;
-  
+
   // Liberar reserva temporal si existe
   if (temporaryReservationId.value) {
     releaseExpiredReservation(temporaryReservationId.value);
@@ -1143,7 +1192,7 @@ const handleReceiptUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     receiptFile.value = target.files[0];
-    
+
     // Crear vista previa
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1176,22 +1225,32 @@ const submitForm = async () => {
 
   try {
     isLoading.value = true;
-    
+
     // Subir comprobante a Firebase Storage
     const ticketNumber = generateTicketNumber();
     const receiptUrl = await uploadReceipt(receiptFile.value, ticketNumber);
-    
+
     // Guardar participante con URL del comprobante
     await saveParticipant(receiptUrl);
-    
+
+    // ENVIAR CORREO ELECTRÓNICO CON LA INFORMACIÓN DEL COMPROBANTE
+    await sendPaymentConfirmationEmail(
+      form.value.name,
+      form.value.phone,
+      form.value.selectedNumbers,
+      totalPrice.value,
+      ticketNumber,
+      receiptUrl // Asegúrate de pasar la URL del comprobante
+    );
+
     // Marcar números como permanentemente ocupados
     await markNumbersAsTaken(form.value.selectedNumbers);
-    
+
     // Liberar reserva temporal
     if (temporaryReservationId.value) {
       await releaseExpiredReservation(temporaryReservationId.value);
     }
-    
+
     // Mostrar mensaje de confirmación
     alert(`¡Perfecto! Hemos recibido tu comprobante de pago. 
     
@@ -1206,7 +1265,7 @@ Número de boleta: ${ticketNumber}`);
     // Cerrar modal y reiniciar formulario
     closeReceiptModal();
     resetForm();
-    
+
   } catch (error) {
     console.error("Error al procesar el formulario:", error);
     alert("Ocurrió un error al procesar tu participación. Por favor intenta nuevamente.");
@@ -1220,7 +1279,7 @@ onMounted(() => {
   loadTakenNumbers();
   loadTemporaryReservations();
   const unsubscribe = subscribeToTemporaryReservations();
-  
+
   // Limpiar suscripción cuando el componente se desmonte
   onUnmounted(() => {
     unsubscribe();
