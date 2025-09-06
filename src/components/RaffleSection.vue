@@ -352,10 +352,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, onUnmounted } from 'vue';
+import { ref, onMounted, computed, onUnmounted } from 'vue';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, updateDoc, deleteDoc, onSnapshot, query } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth, db, storage, signInWithEmailAndPassword } from '@/lib/firebase';
 import { jsPDF } from 'jspdf';
@@ -397,11 +397,7 @@ const showReceiptViewer = ref(false);
 const currentReceiptUrl = ref('');
 const currentParticipant = ref<any>(null);
 
-// Datos de contacto del administrador
-const adminData = ref({
-  phone: '3125919606',
-  messageTemplate: 'Hola, he subido mi comprobante de pago para la rifa con los siguientes datos:'
-});
+
 
 // Precio total calculado
 const totalPrice = computed(() => {
@@ -725,6 +721,7 @@ const saveParticipant = async (receiptUrl: string = '') => {
     };
 
     const docRef = await addDoc(collection(db, "participants"), participantData);
+    console.log("Participante guardado con ID:", docRef.id);
     return ticketNumber;
   } catch (error) {
     console.error("Error guardando participante:", error);
@@ -767,24 +764,6 @@ const toggleNumberSelection = (number: number) => {
   }
 };
 
-// Generar enlace de WhatsApp con los datos del formulario
-const generateWhatsAppLink = (ticketNumber: string) => {
-  if (form.value.selectedNumbers.length === 0) return '';
-
-  const numbersList = form.value.selectedNumbers.join(', ');
-
-  const message = `${adminData.value.messageTemplate}
-  
-Nombre: ${form.value.name}
-Teléfono: ${form.value.phone}
-Números seleccionados: ${numbersList}
-Total pagado: $${totalPrice.value.toLocaleString('es-CO')} COP
-Número de boleta: ${ticketNumber}
-
-Por favor confírmenme cuando hayan validado el pago.`;
-
-  return `https://wa.me/${adminData.value.phone}?text=${encodeURIComponent(message)}`;
-};
 
 // Marcar números como ocupados
 const markNumbersAsTaken = async (numbers: number[]) => {
