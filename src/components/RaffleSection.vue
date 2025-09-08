@@ -1,5 +1,13 @@
 <template>
   <section id="rifa" class="container py-20 md:py-32">
+    <!-- Overlay de carga global -->
+    <div v-if="globalLoading" class="fixed inset-0 bg-black/50 flex items-center justify-center z-60">
+      <div class="bg-white rounded-lg p-6 flex flex-col items-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A8ACC] mb-4"></div>
+        <p class="text-lg font-medium">Cargando...</p>
+      </div>
+    </div>
+
     <div class="grid place-items-center lg:max-w-screen-xl gap-8 mx-auto">
       <!-- Encabezado y descripción -->
       <div class="text-center space-y-8">
@@ -49,7 +57,10 @@
             <p class="text-center text-sm">$20,000 COP por número - Seleccionados: {{ form.selectedNumbers.length }}</p>
 
             <div class="overflow-auto max-h-[500px] border rounded-lg p-2">
-              <div class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1 sm:gap-2">
+              <div v-if="loadingNumbers" class="flex justify-center items-center h-40">
+                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A8ACC]"></div>
+              </div>
+              <div v-else class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1 sm:gap-2">
                 <button v-for="number in availableNumbers" :key="number" @click="toggleNumberSelection(number)"
                   class="h-10 sm:h-12 w-full flex items-center justify-center rounded-md border transition-colors text-xs sm:text-sm"
                   :class="getNumberClass(number)" :disabled="isLoading || !isNumberAvailable(number)"
@@ -112,13 +123,12 @@
           <!-- Botón para abrir modal de comprobante -->
           <Button @click="openReceiptModal"
             class="w-full font-bold group/arrow bg-[#1A8ACC] hover:bg-[#1A8ACC]/80 mt-6 py-6 text-lg"
-            :disabled="isLoading || !canSubmit">
-            <span>Subir Comprobante de Pago</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                clip-rule="evenodd" />
-            </svg>
+            :disabled="isLoading || !canSubmit || isSubmitting">
+            <span v-if="!isSubmitting">Subir Comprobante de Pago</span>
+            <div v-else class="flex items-center">
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              Procesando...
+            </div>
           </Button>
 
           <div class="bg-green-50 p-4 rounded-lg border border-green-200" v-if="form.selectedNumbers.length > 0">
@@ -137,7 +147,15 @@
 
       <!-- Modal para subir comprobante -->
       <div v-if="showReceiptModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md relative">
+          <!-- Overlay de carga específico para el modal -->
+          <div v-if="isSubmitting" class="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-10">
+            <div class="flex flex-col items-center">
+              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A8ACC] mb-4"></div>
+              <p class="text-lg font-medium">Procesando...</p>
+            </div>
+          </div>
+
           <h2 class="text-xl font-bold mb-4">Subir Comprobante de Pago</h2>
 
           <div class="mb-4 p-4 bg-blue-50 rounded-lg">
@@ -149,7 +167,7 @@
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu comprobante:</label>
             <input type="file" accept="image/*" @change="handleReceiptUpload"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md">
+              class="w-full px-3 py-2 border border-gray-300 rounded-md" :disabled="isSubmitting">
 
             <div v-if="receiptPreview" class="mt-4">
               <p class="text-sm font-medium text-gray-700 mb-2">Vista previa:</p>
@@ -167,11 +185,15 @@
           </div>
 
           <div class="flex justify-end space-x-3">
-            <Button @click="closeReceiptModal" variant="outline">
+            <Button @click="closeReceiptModal" variant="outline" :disabled="isSubmitting">
               Cancelar
             </Button>
-            <Button @click="submitForm" :disabled="!receiptFile" class="bg-[#1A8ACC] hover:bg-[#1A8ACC]/80">
-              Enviar Comprobante
+            <Button @click="submitForm" :disabled="!receiptFile || isSubmitting" class="bg-[#1A8ACC] hover:bg-[#1A8ACC]/80">
+              <div v-if="isSubmitting" class="flex items-center">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Enviando...
+              </div>
+              <span v-else>Enviar Comprobante</span>
             </Button>
           </div>
         </div>
@@ -202,10 +224,14 @@
         <div v-if="!isAdminAuthenticated" class="space-y-4 p-4 bg-white rounded-lg mb-4">
           <h4 class="font-medium">Autenticación requerida</h4>
           <div class="space-y-2">
-            <Input v-model="adminCredentials.email" placeholder="Correo electrónico" type="email" />
-            <Input v-model="adminCredentials.password" placeholder="Contraseña" type="password" />
-            <Button @click="loginAdmin" class="w-full bg-blue-600 hover:bg-blue-700">
-              Iniciar sesión
+            <Input v-model="adminCredentials.email" placeholder="Correo electrónico" type="email" :disabled="isLoading" />
+            <Input v-model="adminCredentials.password" placeholder="Contraseña" type="password" :disabled="isLoading" />
+            <Button @click="loginAdmin" class="w-full bg-blue-600 hover:bg-blue-700" :disabled="isLoading">
+              <div v-if="isLoading" class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Iniciando sesión...
+              </div>
+              <span v-else>Iniciar sesión</span>
             </Button>
           </div>
         </div>
@@ -218,9 +244,13 @@
           <div class="grid md:grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium mb-1">Marcar números como ocupados:</label>
-              <Input v-model="adminNumbersInput" placeholder="Ej: 5, 12, 34" class="w-full mb-2" />
-              <Button @click="markAdminNumbers" class="bg-green-600 hover:bg-green-700">
-                Marcar como ocupados
+              <Input v-model="adminNumbersInput" placeholder="Ej: 5, 12, 34" class="w-full mb-2" :disabled="isLoading" />
+              <Button @click="markAdminNumbers" class="bg-green-600 hover:bg-green-700" :disabled="isLoading">
+                <div v-if="isLoading" class="flex items-center justify-center">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Procesando...
+                </div>
+                <span v-else>Marcar como ocupados</span>
               </Button>
             </div>
 
@@ -229,8 +259,12 @@
               }}):</label>
               <p class="text-sm overflow-auto max-h-[100px] border p-2 bg-white rounded">{{ takenNumbers.join(', ') ||
                 'Ninguno' }}</p>
-              <Button @click="clearAllTakenNumbers" class="bg-red-600 hover:bg-red-700 mt-2">
-                Limpiar todos los números ocupados
+              <Button @click="clearAllTakenNumbers" class="bg-red-600 hover:bg-red-700 mt-2" :disabled="isLoading">
+                <div v-if="isLoading" class="flex items-center justify-center">
+                  <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Limpiando...
+                </div>
+                <span v-else>Limpiar todos los números ocupados</span>
               </Button>
             </div>
           </div>
@@ -255,8 +289,11 @@
                       reservation.timestamp)) / 60000)) }} minutos</td>
                     <td class="py-2 px-4">
                       <Button @click="releaseReservation(reservation.participantId)" size="sm"
-                        class="bg-red-600 hover:bg-red-700">
-                        Liberar
+                        class="bg-red-600 hover:bg-red-700" :disabled="isLoading">
+                        <div v-if="isLoading" class="flex items-center justify-center">
+                          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                        </div>
+                        <span v-else>Liberar</span>
                       </Button>
                     </td>
                   </tr>
@@ -269,7 +306,7 @@
 
             <h4 class="font-bold text-lg mb-3">Participantes</h4>
             <Input v-model="searchTerm" placeholder="Buscar por nombre, teléfono o número de boleta"
-              class="w-full mb-3" />
+              class="w-full mb-3" :disabled="isLoading" />
 
             <div class="overflow-x-auto">
               <table class="min-w-full bg-white rounded-lg overflow-hidden">
@@ -311,7 +348,7 @@
                     </td>
                     <td class="py-2 px-4">
                       <Button v-if="participant.receiptUrl" @click="viewReceipt(participant)" variant="outline"
-                        size="sm">
+                        size="sm" :disabled="isLoading">
                         Ver comprobante
                       </Button>
                       <span v-else class="text-gray-400 text-sm">Sin comprobante</span>
@@ -326,14 +363,23 @@
                     </td>
                     <td class="py-2 px-4 space-x-2">
                       <Button v-if="!participant.paymentConfirmed" @click="confirmPayment(participant.id)" size="sm"
-                        class="bg-green-600 hover:bg-green-700">
-                        Confirmar Pago
+                        class="bg-green-600 hover:bg-green-700" :disabled="isLoading">
+                        <div v-if="isLoading" class="flex items-center justify-center">
+                          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                        </div>
+                        <span v-else>Confirmar Pago</span>
                       </Button>
-                      <Button @click="generateTicketPDF(participant)" size="sm" class="bg-blue-600 hover:bg-blue-700">
-                        Generar Boleta
+                      <Button @click="generateTicketPDF(participant)" size="sm" class="bg-blue-600 hover:bg-blue-700" :disabled="isLoading">
+                        <div v-if="isLoading" class="flex items-center justify-center">
+                          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                        </div>
+                        <span v-else>Generar Boleta</span>
                       </Button>
-                      <Button @click="deleteParticipant(participant.id)" size="sm" class="bg-red-600 hover:bg-red-700">
-                        Eliminar
+                      <Button @click="deleteParticipant(participant.id)" size="sm" class="bg-red-600 hover:bg-red-700" :disabled="isLoading">
+                        <div v-if="isLoading" class="flex items-center justify-center">
+                          <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1"></div>
+                        </div>
+                        <span v-else>Eliminar</span>
                       </Button>
                     </td>
                   </tr>
@@ -375,6 +421,9 @@ const takenNumbers = ref<number[]>([]);
 const temporaryReservations = ref<{ numbers: number[], timestamp: number, participantId: string }[]>([]);
 const temporaryReservationId = ref<string | null>(null);
 const isLoading = ref(false);
+const isSubmitting = ref(false); // Nueva variable para controlar el estado de envío
+const globalLoading = ref(false);
+const loadingNumbers = ref(true);
 const ticketPrice = 20000; // 20,000 COP por número
 const showAdminPanel = ref(true);
 const reservationTimeout = 15 * 60 * 1000; // 15 minutos para completar el pago
@@ -396,8 +445,6 @@ const receiptPreview = ref<string | null>(null);
 const showReceiptViewer = ref(false);
 const currentReceiptUrl = ref('');
 const currentParticipant = ref<any>(null);
-
-
 
 // Precio total calculado
 const totalPrice = computed(() => {
@@ -477,7 +524,7 @@ const getNumberTitle = (number: number): string => {
 // Cargar números ocupados desde Firebase
 const loadTakenNumbers = async () => {
   try {
-    isLoading.value = true;
+    loadingNumbers.value = true;
     const docRef = doc(db, "raffle", "takenNumbers");
     const docSnap = await getDoc(docRef);
 
@@ -491,7 +538,7 @@ const loadTakenNumbers = async () => {
       takenNumbers.value = JSON.parse(savedNumbers);
     }
   } finally {
-    isLoading.value = false;
+    loadingNumbers.value = false;
   }
 };
 
@@ -595,7 +642,6 @@ const saveTakenNumbers = async () => {
 };
 
 // Enviar notificación por correo electrónico
-// Enviar notificación por correo electrónico cuando se sube comprobante
 const sendPaymentConfirmationEmail = async (name: string, phone: string, numbers: number[], totalAmount: number, ticketNumber: string, receiptUrl: string = '') => {
   try {
     // Configurar EmailJS
@@ -606,7 +652,7 @@ const sendPaymentConfirmationEmail = async (name: string, phone: string, numbers
       from_name: "Sistema de Rifa",
       name: name,
       phone: phone,
-      numbers: numbers.join(', '), // Convertir array a string
+      numbers: numbers.join(', '),
       numbersCount: numbers.length,
       totalAmount: totalAmount.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }),
       ticketNumber: ticketNumber,
@@ -624,7 +670,7 @@ const sendPaymentConfirmationEmail = async (name: string, phone: string, numbers
 
     await emailjs.send(
       "service_x08uwpo",
-      "template_t6eoyqm", // Asegúrate de que esta plantilla use {{numbers}} en lugar del loop {{#each numbers}}
+      "template_t6eoyqm",
       templateParams
     );
     
@@ -734,6 +780,7 @@ const saveParticipant = async (receiptUrl: string = '') => {
 // Autenticación de administrador
 const loginAdmin = async () => {
   try {
+    isLoading.value = true;
     await signInWithEmailAndPassword(
       auth,
       adminCredentials.value.email,
@@ -745,6 +792,8 @@ const loginAdmin = async () => {
   } catch (error) {
     console.error("Error de autenticación:", error);
     alert("Credenciales incorrectas");
+  } finally {
+    isLoading.value = false;
   }
 };
 
@@ -763,7 +812,6 @@ const toggleNumberSelection = (number: number) => {
     form.value.selectedNumbers.splice(index, 1);
   }
 };
-
 
 // Marcar números como ocupados
 const markNumbersAsTaken = async (numbers: number[]) => {
@@ -823,8 +871,10 @@ const clearAllTakenNumbers = async () => {
   }
 
   if (confirm("¿Estás seguro de que quieres limpiar TODOS los números ocupados?")) {
+    globalLoading.value = true;
     takenNumbers.value = [];
     await saveTakenNumbers();
+    globalLoading.value = false;
     alert("Todos los números han sido liberados");
   }
 };
@@ -846,6 +896,8 @@ const confirmPayment = async (participantId: string) => {
   if (!isAdminAuthenticated.value) return;
 
   try {
+    globalLoading.value = true;
+    
     // Encontrar el participante en la lista
     const participant = participants.value.find(p => p.id === participantId);
     if (!participant) {
@@ -905,6 +957,8 @@ const confirmPayment = async (participantId: string) => {
   } catch (error) {
     console.error("Error confirmando pago:", error);
     alert("Error al confirmar el pago");
+  } finally {
+    globalLoading.value = false;
   }
 };
 
@@ -914,6 +968,8 @@ const deleteParticipant = async (participantId: string) => {
 
   if (confirm("¿Estás seguro de que quieres eliminar este participante y liberar sus números?")) {
     try {
+      globalLoading.value = true;
+      
       // Encontrar el participante para obtener sus números
       const participant = participants.value.find(p => p.id === participantId);
       if (!participant) {
@@ -948,6 +1004,8 @@ const deleteParticipant = async (participantId: string) => {
     } catch (error) {
       console.error("Error eliminando participante:", error);
       alert("Error al eliminar el participante");
+    } finally {
+      globalLoading.value = false;
     }
   }
 };
@@ -955,6 +1013,8 @@ const deleteParticipant = async (participantId: string) => {
 // Generar PDF de la boleta
 const generateTicketPDF = async (participant: any) => {
   try {
+    globalLoading.value = true;
+    
     // Crear elemento HTML para la boleta con diseño profesional
     const ticketElement = document.createElement('div');
     ticketElement.style.width = '600px';
@@ -1026,7 +1086,7 @@ const generateTicketPDF = async (participant: any) => {
         border: 1px solid #ddd;
         border-radius: 4px;
         font-weight: bold;
-        line-height: 1; /* Asegura que no haya espacio extra */
+        line-height: 1;
         ${takenNumbers.value.includes(num) && !participant.paymentConfirmed ? 'position: relative;' : ''}
       ">
         <span style="display: inline-block; margin: 0; padding: 0;">${num}</span>
@@ -1102,6 +1162,8 @@ const generateTicketPDF = async (participant: any) => {
   } catch (error) {
     console.error("Error generando PDF:", error);
     alert("Error al generar el PDF de la boleta");
+  } finally {
+    globalLoading.value = false;
   }
 };
 
@@ -1118,6 +1180,9 @@ const searchParticipants = computed(() => {
 
 // Abrir modal para subir comprobante
 const openReceiptModal = async () => {
+  // Prevenir abrir modal si ya se está enviando
+  if (isSubmitting.value) return;
+  
   if (!form.value.name.trim()) {
     alert("Por favor ingresa tu nombre");
     return;
@@ -1155,6 +1220,9 @@ const openReceiptModal = async () => {
 
 // Cerrar modal de comprobante
 const closeReceiptModal = () => {
+  // Solo permitir cerrar si no se está enviando
+  if (isSubmitting.value) return;
+  
   showReceiptModal.value = false;
   receiptFile.value = null;
   receiptPreview.value = null;
@@ -1197,13 +1265,11 @@ const closeReceiptViewer = () => {
 
 // Enviar formulario con comprobante
 const submitForm = async () => {
-  if (!receiptFile.value) {
-    alert("Por favor selecciona un comprobante de pago");
-    return;
-  }
-
+  // Prevenir múltiples envíos
+  if (isSubmitting.value || !receiptFile.value) return;
+  
   try {
-    isLoading.value = true;
+    isSubmitting.value = true;
 
     // Subir comprobante a Firebase Storage
     const ticketNumber = generateTicketNumber();
@@ -1219,7 +1285,7 @@ const submitForm = async () => {
       form.value.selectedNumbers,
       totalPrice.value,
       ticketNumber,
-      receiptUrl // Asegúrate de pasar la URL del comprobante
+      receiptUrl
     );
 
     // Marcar números como permanentemente ocupados
@@ -1244,24 +1310,30 @@ Número de boleta: ${ticketNumber}`);
     // Cerrar modal y reiniciar formulario
     closeReceiptModal();
     resetForm();
-
+    window.location.reload();
   } catch (error) {
     console.error("Error al procesar el formulario:", error);
     alert("Ocurrió un error al procesar tu participación. Por favor intenta nuevamente.");
   } finally {
-    isLoading.value = false;
+    isSubmitting.value = false;
   }
 };
 
 // Cargar números y participantes al iniciar
 onMounted(() => {
-  loadTakenNumbers();
-  loadTemporaryReservations();
-  const unsubscribe = subscribeToTemporaryReservations();
+  globalLoading.value = true;
+  
+  // Simular un pequeño retraso para mostrar la pantalla de carga
+  setTimeout(async () => {
+    await loadTakenNumbers();
+    await loadTemporaryReservations();
+    const unsubscribe = subscribeToTemporaryReservations();
+    globalLoading.value = false;
 
-  // Limpiar suscripción cuando el componente se desmonte
-  onUnmounted(() => {
-    unsubscribe();
-  });
+    // Limpiar suscripción cuando el componente se desmonte
+    onUnmounted(() => {
+      unsubscribe();
+    });
+  }, 1000);
 });
 </script>
