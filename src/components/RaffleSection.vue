@@ -35,52 +35,131 @@
         </div>
       </div>
 
-      <!-- Formulario principal -->
+      <!-- Indicador de pasos -->
+      <div class="w-full max-w-4xl">
+        <div class="flex justify-between items-center mb-8">
+          <div v-for="(step, index) in steps" :key="index" 
+               class="flex flex-col items-center flex-1">
+            <div class="flex items-center w-full">
+              <!-- Línea entre pasos -->
+              <div v-if="index > 0" class="flex-1 h-1" 
+                   :class="currentStep > index ? 'bg-[#1A8ACC]' : 'bg-gray-300'"></div>
+              
+              <!-- Círculo del paso -->
+              <div class="relative">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all"
+                     :class="{
+                       'bg-[#1A8ACC] border-[#1A8ACC] text-white': currentStep > index,
+                       'bg-white border-[#1A8ACC] text-[#1A8ACC]': currentStep === index,
+                       'bg-gray-200 border-gray-300 text-gray-500': currentStep < index
+                     }">
+                  <span v-if="currentStep > index" class="text-white">✓</span>
+                  <span v-else>{{ index + 1 }}</span>
+                </div>
+                <span class="absolute top-full mt-2 text-sm font-medium whitespace-nowrap"
+                      :class="{
+                        'text-[#1A8ACC]': currentStep >= index,
+                        'text-gray-500': currentStep < index
+                      }">
+                  {{ step.title }}
+                </span>
+              </div>
+              
+              <!-- Línea entre pasos -->
+              <div v-if="index < steps.length - 1" class="flex-1 h-1" 
+                   :class="currentStep > index ? 'bg-[#1A8ACC]' : 'bg-gray-300'"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contenido del paso actual -->
       <div class="w-full max-w-6xl bg-white/90 dark:bg-card p-6 md:p-8 rounded-lg shadow-lg">
-        <div class="space-y-6">
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre completo</label>
-            <Input v-model="form.name" placeholder="Ingresa tu nombre completo" class="w-full" :disabled="isLoading" />
+        <!-- Paso 1: Selección de números -->
+        <div v-if="currentStep === 1" class="space-y-6">
+          <h2 class="text-2xl font-bold text-center">Selecciona tus números de la suerte</h2>
+          <p class="text-center text-muted-foreground">Elige entre 1 y 1000 - $20,000 COP por número</p>
+          
+          <div class="overflow-auto max-h-[500px] border rounded-lg p-4">
+            <div v-if="loadingNumbers" class="flex justify-center items-center h-40">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A8ACC]"></div>
+            </div>
+            <div v-else class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1 sm:gap-2">
+              <button v-for="number in availableNumbers" :key="number" @click="toggleNumberSelection(number)"
+                class="h-10 sm:h-12 w-full flex items-center justify-center rounded-md border transition-colors text-xs sm:text-sm"
+                :class="getNumberClass(number)" :disabled="isLoading || !isNumberAvailable(number)"
+                :title="getNumberTitle(number)">
+                {{ number }}
+                <span v-if="isNumberReserved(number)" class="ml-1 text-xs">⏱️</span>
+              </button>
+            </div>
           </div>
 
-          <div class="space-y-2">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número de teléfono (con
-              WhatsApp)</label>
-            <Input v-model="form.phone" placeholder="Ingresa tu teléfono (10-15 dígitos)" type="tel" class="w-full"
-              :disabled="isLoading" />
-            <p class="text-sm text-muted-foreground mt-1">Este teléfono debe tener WhatsApp activo para recibir tu
-              boleta</p>
+          <div v-if="form.selectedNumbers.length > 0" class="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+            <p class="font-semibold text-blue-800 mb-2">Resumen de selección:</p>
+            <p class="text-sm">Números elegidos: {{ form.selectedNumbers.join(', ') }}</p>
+            <p class="font-bold mt-1">Total a pagar: ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
+            <p class="text-xs text-blue-600 mt-2">
+              ⏱️ Tus números estarán reservados por 15 minutos para que completes el pago
+            </p>
           </div>
 
+          <div class="flex justify-between mt-6">
+            <Button @click="resetForm" variant="outline" :disabled="isLoading">
+              Reiniciar selección
+            </Button>
+            <Button @click="goToNextStep" 
+                    :disabled="form.selectedNumbers.length === 0 || isLoading"
+                    class="bg-[#1A8ACC] hover:bg-[#1A8ACC]/80">
+              Siguiente: Datos personales
+            </Button>
+          </div>
+        </div>
+
+        <!-- Paso 2: Datos personales -->
+        <div v-if="currentStep === 2" class="space-y-6">
+          <h2 class="text-2xl font-bold text-center">Completa tus datos personales</h2>
+          <p class="text-center text-muted-foreground">Necesitamos esta información para contactarte</p>
+          
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-center">Elige tus números de la suerte (1-1000)</h3>
-            <p class="text-center text-sm">$20,000 COP por número - Seleccionados: {{ form.selectedNumbers.length }}</p>
-
-            <div class="overflow-auto max-h-[500px] border rounded-lg p-2">
-              <div v-if="loadingNumbers" class="flex justify-center items-center h-40">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#1A8ACC]"></div>
-              </div>
-              <div v-else class="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-1 sm:gap-2">
-                <button v-for="number in availableNumbers" :key="number" @click="toggleNumberSelection(number)"
-                  class="h-10 sm:h-12 w-full flex items-center justify-center rounded-md border transition-colors text-xs sm:text-sm"
-                  :class="getNumberClass(number)" :disabled="isLoading || !isNumberAvailable(number)"
-                  :title="getNumberTitle(number)">
-                  {{ number }}
-                  <span v-if="isNumberReserved(number)" class="ml-1 text-xs">⏱️</span>
-                </button>
-              </div>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre completo *</label>
+              <Input v-model="form.name" placeholder="Ingresa tu nombre completo" class="w-full" :disabled="isLoading" />
+              <p v-if="errors.name" class="text-red-500 text-sm mt-1">{{ errors.name }}</p>
             </div>
 
-            <div v-if="form.selectedNumbers.length > 0" class="mt-4 p-3 bg-blue-50 rounded-lg">
-              <p class="font-semibold text-blue-800">Resumen de selección:</p>
-              <p class="text-sm">Números elegidos: {{ form.selectedNumbers.join(', ') }}</p>
-              <p class="font-bold mt-1">Total a pagar: ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
-              <p v-if="temporaryReservationId" class="text-xs text-blue-600 mt-2">
-                ⏱️ Tus números están reservados por 15 minutos para que completes el pago
-              </p>
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Número de teléfono (con WhatsApp) *</label>
+              <Input v-model="form.phone" placeholder="Ingresa tu teléfono (10-15 dígitos)" type="tel" class="w-full"
+                :disabled="isLoading" />
+              <p v-if="errors.phone" class="text-red-500 text-sm mt-1">{{ errors.phone }}</p>
+              <p class="text-sm text-muted-foreground mt-1">Este teléfono debe tener WhatsApp activo para recibir tu boleta</p>
             </div>
           </div>
 
+          <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 class="font-bold text-blue-800 mb-2">Resumen de tu selección:</h4>
+            <p>Números: {{ form.selectedNumbers.join(', ') }}</p>
+            <p class="font-bold">Total: ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
+          </div>
+
+          <div class="flex justify-between mt-6">
+            <Button @click="goToPreviousStep" variant="outline" :disabled="isLoading">
+              Anterior: Selección de números
+            </Button>
+            <Button @click="validatePersonalInfo" 
+                    :disabled="!form.name.trim() || !isValidPhone(form.phone) || isLoading"
+                    class="bg-[#1A8ACC] hover:bg-[#1A8ACC]/80">
+              Siguiente: Información de pago
+            </Button>
+          </div>
+        </div>
+
+        <!-- Paso 3: Información de pago -->
+        <div v-if="currentStep === 3" class="space-y-6">
+          <h2 class="text-2xl font-bold text-center">Información de pago</h2>
+          <p class="text-center text-muted-foreground">Realiza tu pago y sube el comprobante</p>
+          
           <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-300 shadow-sm">
             <h4 class="font-bold text-blue-800 text-lg mb-3 flex items-center gap-2">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -120,54 +199,41 @@
             </div>
           </div>
 
-          <!-- Botón para abrir modal de comprobante -->
-          <Button @click="openReceiptModal"
-            class="w-full font-bold group/arrow bg-[#1A8ACC] hover:bg-[#1A8ACC]/80 mt-6 py-6 text-lg"
-            :disabled="isLoading || !canSubmit || isSubmitting">
-            <span v-if="!isSubmitting">Subir Comprobante de Pago</span>
-            <div v-else class="flex items-center">
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Procesando...
-            </div>
-          </Button>
-
-          <div class="bg-green-50 p-4 rounded-lg border border-green-200" v-if="form.selectedNumbers.length > 0">
+          <div class="bg-green-50 p-4 rounded-lg border border-green-200">
             <h4 class="font-bold text-green-800 mb-2">¡Importante!</h4>
-            <p class="text-green-700">Por favor envía el pago exacto de <strong>${{ totalPrice.toLocaleString('es-CO')
-                }} COP</strong> correspondiente a {{ form.selectedNumbers.length }} número(s).</p>
-            <p class="text-green-700 mt-1">Sube el comprobante en el formulario y recibirás tu boleta por WhatsApp.</p>
+            <p class="text-green-700">Por favor envía el pago exacto de <strong>${{ totalPrice.toLocaleString('es-CO') }} COP</strong> correspondiente a {{ form.selectedNumbers.length }} número(s).</p>
+            <p class="text-green-700 mt-1">Sube el comprobante en el siguiente paso y recibirás tu boleta por WhatsApp.</p>
           </div>
 
-          <p class="text-xs text-center text-gray-500 dark:text-gray-400">
-            Al participar aceptas nuestros términos y condiciones. Los números se reservan solo después de confirmado el
-            pago.
-          </p>
+          <div class="flex justify-between mt-6">
+            <Button @click="goToPreviousStep" variant="outline" :disabled="isLoading">
+              Anterior: Datos personales
+            </Button>
+            <Button @click="goToNextStep" 
+                    class="bg-[#1A8ACC] hover:bg-[#1A8ACC]/80">
+              Siguiente: Subir comprobante
+            </Button>
+          </div>
         </div>
-      </div>
 
-      <!-- Modal para subir comprobante -->
-      <div v-if="showReceiptModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-lg p-6 w-full max-w-md relative">
-          <!-- Overlay de carga específico para el modal -->
-          <div v-if="isSubmitting" class="absolute inset-0 bg-white/80 flex items-center justify-center rounded-lg z-10">
-            <div class="flex flex-col items-center">
-              <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-[#1A8ACC] mb-4"></div>
-              <p class="text-lg font-medium">Procesando...</p>
-            </div>
-          </div>
-
-          <h2 class="text-xl font-bold mb-4">Subir Comprobante de Pago</h2>
-
+        <!-- Paso 4: Subir comprobante -->
+        <div v-if="currentStep === 4" class="space-y-6">
+          <h2 class="text-2xl font-bold text-center">Subir comprobante de pago</h2>
+          <p class="text-center text-muted-foreground">Adjunta la imagen de tu comprobante de pago</p>
+          
           <div class="mb-4 p-4 bg-blue-50 rounded-lg">
             <p class="font-semibold text-blue-800">Resumen de tu compra:</p>
             <p class="text-sm">Números: {{ form.selectedNumbers.join(', ') }}</p>
             <p class="font-bold">Total: ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
           </div>
 
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu comprobante:</label>
-            <input type="file" accept="image/*" @change="handleReceiptUpload"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md" :disabled="isSubmitting">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Selecciona tu comprobante:</label>
+              <input type="file" accept="image/*" @change="handleReceiptUpload"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md" :disabled="isSubmitting">
+              <p v-if="errors.receipt" class="text-red-500 text-sm mt-1">{{ errors.receipt }}</p>
+            </div>
 
             <div v-if="receiptPreview" class="mt-4">
               <p class="text-sm font-medium text-gray-700 mb-2">Vista previa:</p>
@@ -176,26 +242,59 @@
             </div>
           </div>
 
-          <div class="mb-4 p-4 bg-yellow-50 rounded-lg">
+          <div class="bg-yellow-50 p-4 rounded-lg">
             <p class="text-sm text-yellow-700">
               <span class="font-bold">Importante:</span> Tu boleta será enviada por WhatsApp al número que registraste
-              una vez validemos el pago.
-              Asegúrate de tener WhatsApp activo en este teléfono.
+              una vez validemos el pago. Asegúrate de tener WhatsApp activo en este teléfono.
             </p>
           </div>
 
-          <div class="flex justify-end space-x-3">
-            <Button @click="closeReceiptModal" variant="outline" :disabled="isSubmitting">
-              Cancelar
+          <div class="flex justify-between mt-6">
+            <Button @click="goToPreviousStep" variant="outline" :disabled="isSubmitting">
+              Anterior: Información de pago
             </Button>
-            <Button @click="submitForm" :disabled="!receiptFile || isSubmitting" class="bg-[#1A8ACC] hover:bg-[#1A8ACC]/80">
+            <Button @click="submitForm" 
+                    :disabled="!receiptFile || isSubmitting"
+                    class="bg-green-600 hover:bg-green-700">
               <div v-if="isSubmitting" class="flex items-center">
                 <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                 Enviando...
               </div>
-              <span v-else>Enviar Comprobante</span>
+              <span v-else>Finalizar y enviar comprobante</span>
             </Button>
           </div>
+        </div>
+
+        <!-- Paso 5: Confirmación -->
+        <div v-if="currentStep === 5" class="text-center space-y-6 py-8">
+          <div class="bg-green-50 p-6 rounded-lg border border-green-200 max-w-md mx-auto">
+            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+              </svg>
+            </div>
+            
+            <h2 class="text-2xl font-bold text-green-800 mb-2">¡Participación Exitosa!</h2>
+            <p class="text-green-700 mb-4">Hemos recibido tu comprobante de pago correctamente.</p>
+            
+            <div class="bg-white p-4 rounded border border-green-200 text-left">
+              <p class="font-semibold mb-2">Resumen de tu participación:</p>
+              <p><strong>Nombre:</strong> {{ form.name }}</p>
+              <p><strong>Teléfono:</strong> {{ form.phone }}</p>
+              <p><strong>Números:</strong> {{ form.selectedNumbers.join(', ') }}</p>
+              <p><strong>Total pagado:</strong> ${{ totalPrice.toLocaleString('es-CO') }} COP</p>
+              <p><strong>Número de boleta:</strong> {{ lastTicketNumber }}</p>
+            </div>
+            
+            <p class="text-sm text-green-600 mt-4">
+              Tu boleta será enviada por WhatsApp una vez validemos el pago. 
+              Asegúrate de tener WhatsApp activo en el teléfono: {{ form.phone }}
+            </p>
+          </div>
+          
+          <Button @click="startNewParticipation" class="bg-[#1A8ACC] hover:bg-[#1A8ACC]/80">
+            Participar nuevamente
+          </Button>
         </div>
       </div>
 
@@ -255,10 +354,8 @@
             </div>
 
             <div>
-              <label class="block text-sm font-medium mb-1">Números ocupados actuales ({{ takenNumbers.length
-              }}):</label>
-              <p class="text-sm overflow-auto max-h-[100px] border p-2 bg-white rounded">{{ takenNumbers.join(', ') ||
-                'Ninguno' }}</p>
+              <label class="block text-sm font-medium mb-1">Números ocupados actuales ({{ takenNumbers.length }}):</label>
+              <p class="text-sm overflow-auto max-h-[100px] border p-2 bg-white rounded">{{ takenNumbers.join(', ') || 'Ninguno' }}</p>
               <Button @click="clearAllTakenNumbers" class="bg-red-600 hover:bg-red-700 mt-2" :disabled="isLoading">
                 <div v-if="isLoading" class="flex items-center justify-center">
                   <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -285,8 +382,7 @@
                   <tr v-for="reservation in temporaryReservations" :key="reservation.participantId">
                     <td class="py-2 px-4">{{ reservation.participantId.slice(0, 8) }}...</td>
                     <td class="py-2 px-4">{{ reservation.numbers.join(', ') }}</td>
-                    <td class="py-2 px-4">{{ Math.max(0, Math.floor((reservationTimeout - (Date.now() -
-                      reservation.timestamp)) / 60000)) }} minutos</td>
+                    <td class="py-2 px-4">{{ Math.max(0, Math.floor((reservationTimeout - (Date.now() - reservation.timestamp)) / 60000)) }} minutos</td>
                     <td class="py-2 px-4">
                       <Button @click="releaseReservation(reservation.participantId)" size="sm"
                         class="bg-red-600 hover:bg-red-700" :disabled="isLoading">
@@ -343,8 +439,7 @@
                       <span v-else class="text-gray-400">N/A</span>
                     </td>
                     <td class="py-2 px-4">
-                      {{ participant.totalAmount?.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }) ||
-                        '$0' }}
+                      {{ participant.totalAmount?.toLocaleString('es-CO', { style: 'currency', currency: 'COP' }) || '$0' }}
                     </td>
                     <td class="py-2 px-4">
                       <Button v-if="participant.receiptUrl" @click="viewReceipt(participant)" variant="outline"
@@ -415,11 +510,28 @@ import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import emailjs from 'emailjs-com';
 
+// Definición de pasos
+const steps = [
+  { title: 'Selección', description: 'Elige tus números' },
+  { title: 'Datos', description: 'Información personal' },
+  { title: 'Pago', description: 'Información bancaria' },
+  { title: 'Comprobante', description: 'Subir comprobante' },
+  { title: 'Confirmación', description: 'Participación exitosa' }
+];
+
 // Estado del formulario
 const form = ref({
   name: '',
   phone: '',
   selectedNumbers: [] as number[]
+});
+
+// Estado de navegación
+const currentStep = ref(1);
+const errors = ref({
+  name: '',
+  phone: '',
+  receipt: ''
 });
 
 // Configuración
@@ -428,7 +540,7 @@ const takenNumbers = ref<number[]>([]);
 const temporaryReservations = ref<{ numbers: number[], timestamp: number, participantId: string }[]>([]);
 const temporaryReservationId = ref<string | null>(null);
 const isLoading = ref(false);
-const isSubmitting = ref(false); // Nueva variable para controlar el estado de envío
+const isSubmitting = ref(false);
 const globalLoading = ref(false);
 const loadingNumbers = ref(true);
 const ticketPrice = 20000; // 20,000 COP por número
@@ -446,27 +558,72 @@ const participants = ref<any[]>([]);
 const searchTerm = ref('');
 
 // Variables para el comprobante
-const showReceiptModal = ref(false);
 const receiptFile = ref<File | null>(null);
 const receiptPreview = ref<string | null>(null);
 const showReceiptViewer = ref(false);
 const currentReceiptUrl = ref('');
 const currentParticipant = ref<any>(null);
+const lastTicketNumber = ref('');
 
 // Precio total calculado
 const totalPrice = computed(() => {
   return form.value.selectedNumbers.length * ticketPrice;
 });
 
-// Validar si se puede enviar el formulario
-const canSubmit = computed(() => {
-  return form.value.name.trim() &&
-    isValidPhone(form.value.phone) &&
-    form.value.selectedNumbers.length > 0;
-});
-
 // Validaciones
 const isValidPhone = (phone: string) => /^[0-9]{10,15}$/.test(phone);
+
+// Navegación entre pasos
+const goToNextStep = () => {
+  if (currentStep.value < steps.length) {
+    currentStep.value++;
+  }
+};
+
+const goToPreviousStep = () => {
+  if (currentStep.value > 1) {
+    currentStep.value--;
+  }
+};
+
+const startNewParticipation = () => {
+  resetForm();
+  currentStep.value = 1;
+};
+
+// Validar información personal
+const validatePersonalInfo = () => {
+  errors.value.name = '';
+  errors.value.phone = '';
+  
+  if (!form.value.name.trim()) {
+    errors.value.name = 'El nombre es obligatorio';
+    return;
+  }
+  
+  if (!form.value.phone || !isValidPhone(form.value.phone)) {
+    errors.value.phone = 'Teléfono inválido (debe tener 10-15 dígitos)';
+    return;
+  }
+  
+  // Reservar números temporalmente antes de continuar
+  reserveNumbers();
+};
+
+// Reservar números temporalmente
+const reserveNumbers = async () => {
+  try {
+    isLoading.value = true;
+    temporaryReservationId.value = generateTemporaryId();
+    await reserveNumbersTemporarily(form.value.selectedNumbers, temporaryReservationId.value);
+    goToNextStep();
+  } catch (error) {
+    console.error("Error reservando números:", error);
+    alert("No se pudieron reservar los números. Por favor intenta nuevamente.");
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 // Generar ID único para reserva temporal
 const generateTemporaryId = () => {
@@ -901,6 +1058,11 @@ const resetForm = () => {
   receiptFile.value = null;
   receiptPreview.value = null;
   temporaryReservationId.value = null;
+  errors.value = {
+    name: '',
+    phone: '',
+    receipt: ''
+  };
 };
 
 // Confirmar pago de participante y marcar números como ocupados
@@ -1202,67 +1364,12 @@ const searchParticipants = computed(() => {
   );
 });
 
-// Abrir modal para subir comprobante
-const openReceiptModal = async () => {
-  // Prevenir abrir modal si ya se está enviando
-  if (isSubmitting.value) return;
-  
-  if (!form.value.name.trim()) {
-    alert("Por favor ingresa tu nombre");
-    return;
-  }
-
-  if (!form.value.phone || !isValidPhone(form.value.phone)) {
-    alert("Teléfono inválido (debe tener 10-15 dígitos)");
-    return;
-  }
-
-  if (form.value.selectedNumbers.length === 0) {
-    alert("Selecciona al menos un número para participar");
-    return;
-  }
-
-  const alreadyTaken = form.value.selectedNumbers.filter(num => takenNumbers.value.includes(num));
-  if (alreadyTaken.length > 0) {
-    alert(`Los siguientes números ya están ocupados: ${alreadyTaken.join(', ')}`);
-    return;
-  }
-
-  // Reservar números temporalmente
-  try {
-    isLoading.value = true;
-    temporaryReservationId.value = generateTemporaryId();
-    await reserveNumbersTemporarily(form.value.selectedNumbers, temporaryReservationId.value);
-    showReceiptModal.value = true;
-  } catch (error) {
-    console.error("Error reservando números:", error);
-    alert("No se pudieron reservar los números. Por favor intenta nuevamente.");
-  } finally {
-    isLoading.value = false;
-  }
-};
-
-// Cerrar modal de comprobante
-const closeReceiptModal = () => {
-  // Solo permitir cerrar si no se está enviando
-  if (isSubmitting.value) return;
-  
-  showReceiptModal.value = false;
-  receiptFile.value = null;
-  receiptPreview.value = null;
-
-  // Liberar reserva temporal si existe
-  if (temporaryReservationId.value) {
-    releaseExpiredReservation(temporaryReservationId.value);
-    temporaryReservationId.value = null;
-  }
-};
-
 // Manejar subida de comprobante
 const handleReceiptUpload = (event: Event) => {
   const target = event.target as HTMLInputElement;
   if (target.files && target.files[0]) {
     receiptFile.value = target.files[0];
+    errors.value.receipt = '';
 
     // Crear vista previa
     const reader = new FileReader();
@@ -1270,6 +1377,8 @@ const handleReceiptUpload = (event: Event) => {
       receiptPreview.value = e.target?.result as string;
     };
     reader.readAsDataURL(receiptFile.value);
+  } else {
+    errors.value.receipt = 'Debes seleccionar un archivo';
   }
 };
 
@@ -1290,7 +1399,12 @@ const closeReceiptViewer = () => {
 // Enviar formulario con comprobante
 const submitForm = async () => {
   // Prevenir múltiples envíos
-  if (isSubmitting.value || !receiptFile.value) return;
+  if (isSubmitting.value || !receiptFile.value) {
+    if (!receiptFile.value) {
+      errors.value.receipt = 'Debes seleccionar un comprobante';
+    }
+    return;
+  }
   
   try {
     isSubmitting.value = true;
@@ -1320,21 +1434,11 @@ const submitForm = async () => {
       await releaseExpiredReservation(temporaryReservationId.value);
     }
 
-    // Mostrar mensaje de confirmación
-    alert(`¡Perfecto! Hemos recibido tu comprobante de pago. 
+    // Guardar el número de boleta para mostrar en la confirmación
+    lastTicketNumber.value = ticketNumber;
     
-IMPORTANTE:
-1. Tu boleta será enviada por WhatsApp una vez validemos el pago
-2. Asegúrate de tener WhatsApp activo en el teléfono: ${form.value.phone}
-3. Tus números han sido reservados exitosamente
-
-Total pagado: $${totalPrice.value.toLocaleString('es-CO')} COP
-Número de boleta: ${ticketNumber}`);
-
-    // Cerrar modal y reiniciar formulario
-    closeReceiptModal();
-    resetForm();
-    window.location.reload();
+    // Ir al paso de confirmación
+    goToNextStep();
   } catch (error) {
     console.error("Error al procesar el formulario:", error);
     alert("Ocurrió un error al procesar tu participación. Por favor intenta nuevamente.");
